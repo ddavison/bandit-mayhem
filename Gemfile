@@ -1,11 +1,15 @@
 source 'https://rubygems.org'
 
 gem 'colorize'
-gem 'audite'
+gem 'zeitwerk'
 
-# testing
-gem 'rspec'
-gem 'rake'
+group :development, :test do
+  gem 'rubocop'
+  gem 'rspec'
+  gem 'rspec-parameterized'
+  gem 'rake'
 
-gem 'byebug'
-gem 'symbolized'
+  gem 'pry'
+  gem 'symbolized'
+end
+

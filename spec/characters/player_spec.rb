@@ -1,31 +1,36 @@
-require 'characters/player'
-require 'weapons/stick'
+# frozen_string_literal: true
 
-describe BanditMayhem::Characters::Player do
-  subject { BanditMayhem::Characters::Player.new({}) }
-  it 'defaults the name to nigel' do
-    expect(subject.get_av('name')).to eq('Nigel')
-  end
+require 'spec_helper'
 
-  it 'starts in Lynwood' do
-    expect(subject.location[:map].to_s).to eq('Lynwood')
-  end
+module BanditMayhem
+  RSpec.describe Player do
+    subject(:player) { described_class.new(name: 'Test') }
 
-  it 'starts at a health of 100' do
-    expect(subject.get_av('health')).to eq(100)
-    expect(subject.get_av('base_health')).to eq(100)
-    expect(subject).not_to be_dead
-  end
+    let(:map) do
+      Map.new('qasmoke', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml')))
+    end
 
-  it 'starts at level 1' do
-    expect(subject.get_av('level')).to eq(1)
-  end
+    before do
+      allow(Game).to receive(:player).and_return(player)
+    end
 
-  it 'has an empty inventory' do
-    expect(subject.items).to eq([])
-  end
+    it 'defaults the name to nigel' do
+      expect(player.name).to eq('Test')
+    end
 
-  it 'has literally no luck on start' do
-    expect(subject.get_av('luck')).to be_nil
+    it 'inherits attributes from Character' do
+      expect(player.str).to eq(10)
+      expect(player.def).to eq(0)
+      expect(player.gold).to eq(0)
+    end
+
+
+    it 'starts at a health of 100' do
+      expect(player.health).to eq(100)
+    end
+
+    it 'has an empty inventory' do
+      expect(player.items).to eq([])
+    end
   end
 end

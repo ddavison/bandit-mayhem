@@ -1,105 +1,54 @@
-require 'item'
-require 'map'
-require 'shop'
-require 'utils'
+# frozen_string_literal: true
 
-require 'colorize'
-require 'symbolized'
-
-require 'items/traversing_ring'
+require 'attributable'
 
 module BanditMayhem
+  # Character
   class Character
+    include Attributable
+
     attr_accessor :weapon,
-                  :location,
-                  :items
+                  :location
 
-    attr_reader :actor_values
+    attribute :name, 'Somebody'
+    attribute :health, 100
+    attribute :max_health, 100
+    attribute :str, 10
+    attribute :def, 0
+    attribute :gold, 0
 
-    def initialize(add_stats={})
-      @location = {
-          map: nil,
-          last: nil,
-          x: -1,
-          y: -1
-      }
+    # character's position in the map
+    attribute :x, -1
+    attribute :y, -1
 
-      stats = {
-        name: 'Character',
-        health: 100,
-        max_health: 100,
-        str: 10,
-        def: 0,
-        level: 1,
-        gold: 0
-      }.merge(add_stats)
+    # Items in inventory
+    attribute :items, []
 
-      @items = []
-      @actor_values = {}.to_symbolized_hash
+    MovementError = Class.new(RuntimeError)
 
-      stats.map { |k, v| set_av(k, v) }
+    # Create a new character
+    #
+    # @param [Hash] attrs player attributes
+    # @option attrs [String] :name the name of the character
+    # @option attrs [String] :health the health of the character
+    # @option attrs [String] :max_health the max health of the character
+    # @option attrs [String] :str the character's strength
+    # @option attrs [String] :def the character's defense
+    # @option attrs [String] :gold the character's gold
+    # @option attrs [String] :x the X coordinate on the map where the character is located
+    # @option attrs [String] :y the Y coordinate on the map where the character is located
+    def initialize(attrs)
+      merge_attributes(attrs)
     end
 
-    # gets an actor value
-    def get_av(stat, default=nil)
-      return @actor_values[stat] if @actor_values[stat]
-      set_av(stat, default)
-    end
-
-    # sets an actor value
-    def set_av(stat, value)
-      @actor_values["base_#{stat}"] = value unless @actor_values["base_#{stat}"]
-      @actor_values[stat] = value
-    end
-
-    def merge_avs(new_stats)
-      @actor_values&.merge!(new_stats) if new_stats
-    end
-
-    # equip a Weapon object.
-    def equip!(weapon)
-      @weapon = weapon if weapon.is_a? Weapon
-    end
-
-    def loot(target)
-      if target.is_a? BanditMayhem::Character
-
-        everything_looted = {}.to_symbolized_hash
-
-        if target.dead?
-          gold = target.get_av('level') * 15 + (get_av('attacks', 0) * 3)
-
-          everything_looted[:gold] = gold
-          puts 'You got $' + "#{gold}!".yellow
-        else
-          puts 'cannot loot something thats not dead'.red
-        end
-
-        merge_avs(everything_looted)
-        target.actor_values.delete_if { |k, v| everything_looted.key?(k) }
-
-        everything_looted
-      else
-        case target['type']
-          when 'coinpurse'
-            set_av('gold',
-              get_av('gold') + target['value']
-            )
-          when 'weapon'
-            weapon = Object.const_get('BanditMayhem').const_get('Weapons').const_get(target['item']).new
-            @items << weapon
-          else
-            itm = Object.const_get('BanditMayhem').const_get('Items').const_get(target['item']).new
-            items << itm
-        end
-      end
-    end
-
+    # Is the character deceased?
+    #
+    # @return [Boolean] true if the character's health is less-than or equal-to zero
     def dead?
-      get_av('health').to_i <= 0
+      health <= 0
     end
 
-    # Warp within a map
+    # Warp to a specific coordinate within the map
     def warp(coords)
       if coords.is_a? Array
         @location[:x], @location[:y] = coords[0],coords[1]
@@ -108,123 +57,67 @@ module BanditMayhem
         @location[:y] = coords[:y].to_i if coords[:y]
       end
 
-      @location[:last] = {x: @location[:x], y: @location[:y]}
+      @location[:last] = { x: @location[:x], y: @location[:y] }
 
       interact_with(@location)
     end
 
-    # move the self
-    def move(direction)
-      @location[:last] = {x: @location[:x], y: @location[:y]}.to_symbolized_hash
-      case direction
-        when 'up', 'w'
-          if @location[:y] == 1
-            if @location[:map].attributes[:north]
-              @location[:map] = BanditMayhem::Map.new(@location[:map].attributes[:north])
-              @location[:y] = @location[:map].attributes[:height]
-            else
-              puts "can't go north!".red
-            end
-          else
-            @location[:y] = @location[:y].to_i - 1
-          end
-        when 'down', 's'
-          if @location[:y] == @location[:map].attributes[:height]
-            if @location[:map].attributes[:south]
-              @location[:map] = BanditMayhem::Map.new(@location[:map].attributes[:south])
-              @location[:y] = 1
-            else
-              puts "can't go south!".red
-            end
-          else
-            @location[:y] = @location[:y].to_i + 1
-          end
-        when 'left', 'a'
-          if @location[:x] == 1
-            if @location[:map].attributes[:west]
-              @location[:map] = BanditMayhem::Map.new(@location[:map].attributes[:west])
-              @location[:x] = @location[:map].attributes[:width]
-            else
-              puts "can't go west!".red
-            end
-          else
-            @location[:x] = @location[:x].to_i - 1
-          end
-        when 'right', 'd'
-          if @location[:x] == @location[:map].attributes[:width]
-            if @location[:map].attributes[:east]
-              @location[:map] = BanditMayhem::Map.new(@location[:map].attributes[:east])
-              @location[:x] = 1
-            else
-              puts "can't go east!"
-            end
-          else
-            @location[:x] = @location[:x].to_i + 1
-          end
-      end
-
-      interact_with(@location)
+    # Move the character up if able
+    def up
+      move(:up) if can_move?(:up)
     end
 
-    # used for map detection. If the self collides with a shop, for example.
-    def interact_with(location)
-      return if location.nil?
+    # Move the character down if able
+    def down
+      move(:down) if can_move?(:down)
+    end
 
-      if location[:map] # passing in the location object
-        # interacting with a point on the map
-        entity = location[:map].get_entity_at(location)
-        # char = location[:map].get_char_at(location)
-      end
+    # Move the character left if able
+    def left
+      move(:left) if can_move?(:left)
+    end
 
-      if entity
-        case entity['type']
-        when 'shop'
-          shop = BanditMayhem::Shop.new(entity, self)
-          while shop.shopping
-            shop.shop
-          end
-        when 'coinpurse'
-          puts 'you found a ' + 'coinpurse'.upcase.blue + ' with ' + entity['value'].to_s.yellow + ' inside!'
-          loot(entity)
-        when 'door', 'cave'
-          area = entity['destination']['location']
-          @location[:map] = BanditMayhem::Map.new(area)
-          @location[:x] = entity['destination']['x']
-          @location[:y] = entity['destination']['y']
-        when 'item', 'weapon'
-          puts 'you found a ' + entity['item'].to_s.upcase.blue + '!'
-          loot(entity)
-        when 'bandit'
-          enemy_to_fight = nil
-          if !entity['name']
-            require 'characters/bandit'
-            enemy_to_fight = BanditMayhem::Characters::Bandit.new
-          else
-            # do later (this is for greater foes)
-          end
+    # Move the character right if able
+    def right
+      move(:right) if can_move?(:right)
+    end
 
-          battle(enemy_to_fight)
-        end
+    # Get the entity, in the map, to the north of the character. nil if none
+    #
+    # @return [Map::Poi,Characters::Npc,nil]
+    def north
+      Game.map.at(x: x, y: y - 1)
+    end
 
-        case entity['type']
-        when 'wall', 'tree'
-          if @items.include? BanditMayhem::Items::TraversingRing
-            @location[:map].remove_entity(@location)
-          else
-            warp(@location[:last])
-          end
-        end
-      end
+    # Get the entity, in the map, to the south of the character. nil if none
+    #
+    # @return [Map::Poi,Characters::Npc,nil]
+    def south
+      Game.map.at(x: x, y: y + 1)
+    end
 
-      @location[:map].draw_map(self)
+    # Get the entity, in the map, to the west of the character. nil if none
+    #
+    # @return [Map::Poi,Characters::Npc,nil]
+    def west
+      Game.map.at(x: x - 1, y: y)
+    end
+
+    # Get the entity, in the map, to the east of the character. nil if none
+    #
+    # @return [Map::Poi,Characters::Npc,nil]
+    def east
+      Game.map.at(x: x + 1, y: y)
+    end
+
+    # Used for map detection. If the self collides with a shop, for example.
+    def interact
+      entity = Game.map.at(x: self.x, y: self.y)
+      yield entity if block_given?
     end
 
     # ==== MAIN BATTLE FUNC === #
     def battle(enemy)
-      if BanditMayhem::Settings.new.get('music', true)
-        Game.media_player.play_song(File.expand_path('./lib/media/battle.mp3'))
-      end
-
       set_av('attacks', 0)
       enemy.set_av('attacks', 0)
 
@@ -257,10 +150,6 @@ module BanditMayhem
           attack(enemy)
           players_turn = true
         end
-      end
-
-      if BanditMayhem::Settings.new.get('music', true)
-        Game.media_player.stop
       end
     end
 
@@ -332,6 +221,98 @@ module BanditMayhem
     end
 
     private
+
+    # Move the character in a specific direction
+    #
+    # @param [Symbol] direction
+    # @option direction [Symbol] :up
+    # @option direction [Symbol] :down
+    # @option direction [Symbol] :left
+    # @option direction [Symbol] :right
+    def move(direction)
+      case direction
+      when :up, :w
+        if y == 1
+          if Game.map.north
+            Game.map = BanditMayhem::Map.new(Game.map.north)
+
+            self.y = Game.map.height
+          else
+            puts "can't go north!".red
+          end
+        else
+          self.y -= 1
+        end
+      when :down, :s
+        if y == Game.map.height
+          if Game.map.south
+            Game.map = BanditMayhem::Map.new(Game.map.south)
+
+            self.y = 1
+          else
+            puts "can't go south!".red
+          end
+        else
+          self.y += 1
+        end
+      when :left, :a
+        if x == 1
+          if Game.map.west
+            Game.map = BanditMayhem::Map.new(Game.map.west)
+
+            self.x = Game.map.width
+          else
+            puts "can't go west!".red
+          end
+        else
+          self.x -= 1
+        end
+      when :right, :d
+        if x == Game.map.width
+          if Game.map.east
+            Game.map = BanditMayhem::Map.new(Game.map.east)
+
+            self.x = 1
+          else
+            puts "can't go east!".red
+          end
+        else
+          self.x += 1
+        end
+      else
+        raise MovementError, "Cannot move in the direction `#{direction}`"
+      end
+
+      yield interact
+    end
+
+    # Can this character move in a specific direction?
+    #
+    # @param [Symbol] direction the direction in which to check
+    # @option direction [Symbol] :up Character Y - 1
+    # @option direction [Symbol] :down Character Y + 1
+    # @option direction [Symbol] :left Character X - 1
+    # @option direction [Symbol] :right Character X + 1
+    # @return [Boolean] true if can move in this direction
+    def can_move?(direction)
+      # if next move will not collide with a wall
+      entity = case direction
+               when :up
+                 north
+               when :down
+                 south
+               when :left
+                 west
+               when :right
+                 east
+               else
+                 raise MovementError, "Cannot move in the direction `#{direction}`"
+               end
+
+      # TODO: add inability to move when colliding with an interior wall
+      !entity.is_a?(Map::Poi::Wall)
+    end
+
     def calculate_attack_damage
       # dmg = str + weapon.str + (level*5) + (luck / 3)
       weapon_str = 0 || weapon.attributes[:str].to_i

@@ -1,17 +1,10 @@
-require 'character'
+# frozen_string_literal: true
 
 module BanditMayhem
   module Characters
+    # Non-playable Character
     class Npc < Character
-      def initialize(add_stats={})
-        stats = {
-          name: 'Townsperson',
-          health: 100,
-          gold: 10
-        }.merge(add_stats)
 
-        super(stats)
-      end
     end
   end
 end

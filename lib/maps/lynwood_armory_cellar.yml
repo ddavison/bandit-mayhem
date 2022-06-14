@@ -4,7 +4,7 @@ width: 10
 height: 4
 type: town
 
-poi:
+pois:
   -
     type: door
     destination:

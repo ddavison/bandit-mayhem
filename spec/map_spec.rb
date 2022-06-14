@@ -1,145 +1,248 @@
-require 'map'
-require 'character'
-require 'colorize'
+# frozen_string_literal: true
 
-describe BanditMayhem::Map do
-  subject { BanditMayhem::Map.new(file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml'))) }
-  let(:character) { BanditMayhem::Character.new }
+require 'spec_helper'
 
-  context 'initialization' do
-    context 'default load' do
-      subject { BanditMayhem::Map.new('lynwood') }
+module BanditMayhem
+  RSpec.describe Map do
+    let(:player) { Player.new(name: 'test player') }
 
-      it 'loads a default named map' do
-        expect(subject.attributes).to include({ type: 'town' })
-      end
+    subject(:map) do
+      Map.new('qasmoke', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml')))
     end
 
-    context 'a hash object' do
-      subject { BanditMayhem::Map.new(name: 'TestMap') }
-
-      it 'loads when a hash is passed' do
-        expect(subject.attributes).to include({ name: 'TestMap' })
-      end
+    before do
+      allow(Game).to receive(:player).and_return(player)
     end
 
-    context '[file]' do
-      subject { BanditMayhem::Map.new(file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml'))) }
+    describe 'attributes' do
+      it { is_expected.to respond_to(:name) }
+      it { is_expected.to respond_to(:width) }
+      it { is_expected.to respond_to(:height) }
 
-      it 'loads a specific map' do
-        expect(subject.attributes).to include({ name: 'QA Smoke' })
-      end
+      it { is_expected.to respond_to(:pois) }
+
+      it { is_expected.to respond_to(:type) }
+      it { is_expected.to respond_to(:interiors) }
+
+      it { is_expected.to respond_to(:north) }
+      it { is_expected.to respond_to(:south) }
+      it { is_expected.to respond_to(:east) }
+      it { is_expected.to respond_to(:west) }
     end
-  end
 
-  describe '#build!' do
-    before(:each) do
-      subject.build!(character)
-    end
+    describe '#at' do
+      it 'returns the door at 1,1 in qasmoke', :aggregate_failures do
+        poi = map.at(x: 1, y: 1)
 
-    context '2x2 map' do
-      subject { BanditMayhem::Map.new(width: 2, height: 2) }
-
-      let(:map) { subject.matrix }
-
-      it 'will render 4 characters total in width and height' do
-        expect(map.size).to eq(4) # total level
+        expect(poi).to be_a(Map::Poi)
+        expect(poi.type).to eq('door')
+        expect(poi.x).to eq(1)
+        expect(poi.y).to eq(1)
       end
 
-      it 'has corner bends' do
-        expect(map.first[0]).to eq(BanditMayhem::Maps::CORNER_UPPER_LEFT)
-        expect(map.first[-1]).to eq(BanditMayhem::Maps::CORNER_UPPER_RIGHT)
-
-        expect(map.last[0]).to eq(BanditMayhem::Maps::CORNER_LOWER_LEFT)
-        expect(map.last[-1]).to eq(BanditMayhem::Maps::CORNER_LOWER_RIGHT)
-      end
-
-      it 'left and right boundaries have vert walls' do
-        map.size.times do |x|
-          if x != 0 && x == map.size # if it's not the boundary corner walls
-            expect(y[x][0]).to eq(BanditMayhem::Maps::WALL_VERT)
-            expect(y[x][-1]).to eq(BanditMayhem::Maps::WALL_VERT)
-          end
-        end
-      end
-
-      it 'top and bottom boundaries are horiz walls' do
-        top_row = map[0]
-        bottom_row = map[-1]
-
-        top_row.size.times do |x|
-          if x != 0 && x == top_row.size
-            expect(top_row[x]).to eq(BanditMayhem::Maps::WALL_HORIZ)
-          end
-        end
-
-        bottom_row.size.times do |x|
-          if x != 0 && x == bottom_row.size
-            expect(bottom_row[x]).to eq(BanditMayhem::Maps::WALL_HORIZ)
-          end
+      context 'when point is intersecting an interior' do
+        xit 'returns a poi in the context of that interior' do
+          expect(map.at(x: 9, y: 6)).to be_a(Map::Poi::Coinpurse)
         end
       end
     end
 
-    context '4x4 smoke map fixture with pois' do
-      before(:each) do
-        subject.build!(character)
+    describe '#render' do
+      subject(:map) do
+        Map.new('test', height: 1, width: 1)
       end
 
-      it 'renders a door' do
-        expect(subject.get_entity_at(x: 1, y: 1)).to include({ type: 'door' })
+      context 'when map was generated' do
+        before do
+          map.generate
+        end
+
+        it 'renders the map' do
+          expect(map.render).to eq("┌─┐\n│ │\n└─┘\n") # 1x1 map
+        end
       end
 
-      it 'renders a coinpurse' do
-        expect(subject.get_entity_at(x: 2, y: 1)).to include({ type: 'coinpurse' })
-      end
-
-      it 'renders a shop' do
-        expect(subject.get_entity_at(x: 3, y: 1)).to include({ type: 'shop' })
-      end
-
-      it 'renders an item' do
-        expect(subject.get_entity_at(x: 4, y: 1)).to include({ type: 'item', item: 'SmokeItem' })
+      context 'when map was not yet generated' do
+        it 'renders a newline' do
+          expect(map.render).to eq("\n")
+        end
       end
     end
 
-    context 'walls' do
-      after(:each) do
-        puts subject.render(character)
+    describe '#interior_at' do
+      context 'when referring to a valid interior' do
+        # (8,4) in qasmoke.yml is the middle of the Test Room
+        it 'returns the interior at (8, 4)' do
+          expect(map.interior_at(x: 8, y: 4)).to eq(map.interiors.first)
+        end
       end
 
-      it 'renders a vert wall' do
-        expect(subject.get_entity_at(x: 1, y: 2)).to include({ type: 'wall', direction: 'vert'})
-        expect(subject.get_char_at(x: 1, y: 2)).to eq(BanditMayhem::Maps::WALL_VERT)
+      context 'when not referring to a valid interior' do
+        it 'returns nil' do
+          expect(map.interior_at(x: 1, y: 1)).to be_nil
+        end
+      end
+    end
+
+    describe '#initialize' do
+      it 'loads the attributes of the map' do
+        expect(map.name).to eq('QA Smoke') # from qasmoke.yml fixture map
+        expect(map.width).to eq(50)
+        expect(map.height).to eq(10)
       end
 
-      it 'renders a horiz wall' do
-        expect(subject.get_entity_at(x: 2, y: 2)).to include({ type: 'wall', direction: 'horiz'})
-        expect(subject.get_char_at(x: 2, y: 2)).to eq(BanditMayhem::Maps::WALL_HORIZ)
-      end
+      context 'when attributes are specified' do
+        context 'when map exists' do
+          subject(:map) do
+            Map.new('qasmoke', height: 50, file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml')))
+          end
 
-      context 'interiors' do
-        let(:map) { subject.matrix }
-
-        context 'boundaries' do
-          it 'draws an interior' do
-            expect(map[3][5]).to eq(BanditMayhem::Maps::INTERIOR_CORNER_UPPER_LEFT)
-            expect(map[3][6]).to eq(BanditMayhem::Maps::INTERIOR_WALL_HORIZ)
+          it 'merges the attributes' do
+            expect(map.width).to eq(50)
+            expect(map.height).to eq(50)
           end
         end
-        context 'door'
+
+        context 'when map does not exist' do
+          subject(:map) do
+            Map.new('smoke', name: 'New Map', height: 1, width: 1)
+          end
+
+          it 'creates a brand new map' do
+            expect(map.name).to eq('New Map')
+            expect(map.width).to eq(1)
+            expect(map.height).to eq(1)
+          end
+
+          it 'defaults pois to an empty array' do
+            expect(map.pois).to eq([])
+          end
+
+          it 'defaults interiors to an empty array' do
+            expect(map.interiors).to eq([])
+          end
+        end
       end
     end
 
-    context 'floor' do
-      let(:default_map) { BanditMayhem::Map.new(width: 1, height: 1) }
-      let(:town_map) { BanditMayhem::Map.new(width: 1, height: 1, type: :town) }
-      let(:grass_map) { BanditMayhem::Map.new(width: 1, height: 1, type: :grass) }
+    describe '#generate' do
+      before do
+        map.generate
+        puts map.render
+      end
 
-      it 'by default, renders spaces' do
-        default_map.build!(character)
+      it 'generates the map' do
+        expect(map).to be_generated
+      end
 
-        expect(default_map.get_char_at(x: 1, y: 1)).to eq(" ")
+      context '2x2 map' do
+        subject(:map) { Map.new('sample',width: 2, height: 2) }
+
+        it 'will render 4 characters total in width and height' do
+          expect(map.matrix.size).to eq(4) # total level
+        end
+
+        it 'has corner bends' do
+          expect(map.matrix.first[0]).to eq(Map::CORNER_UPPER_LEFT)
+          expect(map.matrix.first[-1]).to eq(Map::CORNER_UPPER_RIGHT)
+
+          expect(map.matrix.last[0]).to eq(Map::CORNER_LOWER_LEFT)
+          expect(map.matrix.last[-1]).to eq(Map::CORNER_LOWER_RIGHT)
+        end
+
+        it 'left and right boundaries have vert walls' do
+          # [1..-2] removes the first and the last X rows, as they are the top and bottom rows without walls.
+          map.matrix[1..-2].each do |bound|
+            expect(bound.first).to eq(Map::WALL_VERT)
+            expect(bound.last).to eq(Map::WALL_VERT)
+          end
+        end
+
+        it 'top and bottom boundaries are horiz walls' do
+          expect(map.matrix.first[1..-2]).to eq([Map::WALL_HORIZ, Map::WALL_HORIZ])
+          expect(map.matrix.last[1..-2]).to eq([Map::WALL_HORIZ, Map::WALL_HORIZ])
+        end
+      end
+
+      context '4x4 smoke map fixture with pois' do
+        before do
+          map.generate
+        end
+
+        it 'renders a door' do
+          expect(map.at(x: 1, y: 1)).to be_a(Map::Poi::Door)
+        end
+
+        it 'renders a coinpurse' do
+          poi = map.at(x: 2, y: 1)
+
+          expect(poi).to be_a(Map::Poi::Coinpurse)
+          expect(poi.value).to eq(10)
+        end
+
+        it 'renders a shop' do
+          expect(map.at(x: 3, y: 1)).to be_a(Map::Poi::Shop)
+        end
+
+        it 'renders an item' do
+          expect(map.at(x: 4, y: 1)).to be_a(Map::Poi::Item)
+        end
+
+        it 'renders an NPC' do
+          expect(map.at(x: 5, y: 1)).to be_a(Characters::Npc)
+        end
+      end
+
+      context 'walls' do
+        after do
+          puts map.render
+        end
+
+        it 'renders a vert wall' do
+          wall = map.at(x: 1, y: 2)
+
+          expect(wall).to be_a(Map::Poi::Wall)
+          expect(wall).to be_vertical
+          expect(map.char_at(x: 1, y: 2)).to eq(Map::WALL_VERT)
+        end
+
+        it 'renders a horiz wall' do
+          wall = map.at(x: 2, y: 2)
+
+          expect(wall).to be_a(Map::Poi::Wall)
+          expect(wall).to be_horizontal
+          expect(map.char_at(x: 2, y: 2)).to eq(Map::WALL_HORIZ)
+        end
+
+        context 'interiors' do
+          let(:matrix) { map.matrix }
+
+          context 'boundaries' do
+            it 'draws an interior' do
+              expect(matrix[3][5]).to eq(Map::INTERIOR_CORNER_UPPER_LEFT)
+              expect(matrix[3][6]).to eq(Map::INTERIOR_WALL_HORIZ)
+            end
+          end
+          context 'door'
+        end
+      end
+
+      context 'floor' do
+        subject(:map) { Map.new('default', width: 1, height: 1) }
+
+        it 'by default, renders spaces' do
+          expect(map.char_at(x: 1, y: 1)).to eq(' ')
+        end
+      end
+    end
+
+    describe '#char_at' do
+      it 'returns the appropriate runes', :aggregate_failures do
+        expect(map.char_at(x: 1, y: 1)).to eq(Map::DOOR)
+        expect(map.char_at(x: 2, y: 1)).to eq(Map::COINPURSE)
+        expect(map.char_at(x: 3, y: 1)).to eq(Map::SHOP)
+        expect(map.char_at(x: 4, y: 1)).to eq(Map::ITEM)
+        expect(map.char_at(x: 5, y: 1)).to eq(Map::NPC)
       end
     end
   end

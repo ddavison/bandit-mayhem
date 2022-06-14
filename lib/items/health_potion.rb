@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'items/consumable'
 
 module BanditMayhem

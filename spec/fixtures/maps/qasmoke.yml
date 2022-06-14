@@ -3,7 +3,7 @@ name: QA Smoke
 width: 50
 height: 10
 
-poi:
+pois:
   - type: door
     destination:
       location: spec/fixtures/maps/qasmoke_door
@@ -15,11 +15,13 @@ poi:
     x: 2
     y: 1
     value: 10
+
   - type: shop
     x: 3
     y: 1
+
   - type: item
-    item: SmokeItem
+    name: SmokeItem
     x: 4
     y: 1
 
@@ -27,16 +29,27 @@ poi:
     direction: vert
     x: 1
     y: 2
+
   - type: wall
     direction: horiz
     x: 2
     y: 2
 
+npcs:
+  - name: Some Dude
+    x: 5
+    y: 1
+
 interiors:
-  - width: 4
+  - name: Test Room
+    width: 4
     height: 3
     x: 5
     y: 3
     door: # door on left side, "middle".
       x: 1
       y: 2
+    pois:
+      - type: coinpurse
+        x: 4
+        y: 3 # in the bottom right corner

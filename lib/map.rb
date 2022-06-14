@@ -1,9 +1,36 @@
+# frozen_string_literal: true
+
 require 'yaml'
 require 'colorize'
 require 'symbolized'
 
 module BanditMayhem
-  module Maps
+  # Bandit Mayhem Map
+  class Map
+    include Attributable
+
+    MapError = Class.new(RuntimeError)
+
+    attribute :name
+    attribute :width
+    attribute :height
+
+    # Points of Interests
+    attribute :pois, []
+
+    # NPCs
+    attribute :npcs, []
+
+    attribute :type
+    attribute :interiors, []
+
+    attribute :north
+    attribute :south
+    attribute :east
+    attribute :west
+
+    attr_accessor :matrix
+
     WALL_VERT          = '│'
     WALL_HORIZ         = '─'
     CORNER_UPPER_RIGHT = '┐'
@@ -23,195 +50,184 @@ module BanditMayhem
     SURFACE_DEFAULT    = ' '
     SURFACE_STONE      = '.'.light_black
     SURFACE_GRASS      = ','.green
+    SURFACE_MARBLE     = '␣'.white
     SHOP               = '$'.yellow
     PLAYER             = '@'.cyan
     COINPURSE          = '¢'.yellow
-    ITEM               = '!'.blue
+    ITEM               = 'ꕺ'.blue
     BANDIT             = '■'.red
     OTHER              = '?'
     TREE               = '∆'.light_green
-    NPC                = '∙'.cyan
-  end
+    NPC                = '¶'.cyan
 
-  class Map
+    SUN = '꥟'.yellow
 
-    def to_s
-      @attributes[:name]
-    end
+    # Point of Interest
+    class Poi
+      include Attributable
 
-    attr_reader :attributes,
-                :poi
+      attribute :name
+      attribute :x
+      attribute :y
+      attribute :type
 
-    attr_accessor :matrix
-
-    def initialize(args)
-      @attributes = {}.to_symbolized_hash
-
-      begin
-        if args.is_a? String
-          default_map_to_load = File.expand_path(File.join('lib', 'maps', "#{args}.yml"))
-          @attributes.merge!(YAML.load_file(default_map_to_load)) if File.exists?(default_map_to_load)
-          @attributes.merge!(YAML.load_file(File.expand_path("#{args}.yml"))) if File.exists?(File.expand_path("#{args}.yml"))
-        elsif args.is_a? Hash
-          if args[:file]
-            @attributes.merge!(YAML.load_file(File.expand_path(args[:file])))
-          else
-            @attributes.merge!(args)
-          end
-        end
-      rescue => e
-        puts e
-        raise "Cant load map #{args.inspect}"
+      # Instantiate a new Point of Interest (POI)
+      #
+      # @param [Hash] poi_hash well-formed hash, probably from a map YAML file
+      # @return [Poi]
+      def initialize(poi_hash)
+        merge_attributes poi_hash
       end
 
-      @boundary_width = @attributes[:width].to_i + 2
-      @boundary_height = @attributes[:height].to_i + 2
+      # Rune to draw on the Map
+      def rune
+        Map.const_get(type.upcase)
+      end
 
-      # @area = @attributes[:width] * @attributes[:height]
+      def to_s
+        "(#{x}, #{y})"
+      end
+
+      # Map Wall
+      class Wall < Poi
+        # vert / horiz wall
+        attribute :direction
+
+        def rune
+          return WALL_VERT if vertical?
+
+          WALL_HORIZ if horizontal?
+        end
+
+        # Is this wall vertical?
+        # @return [Boolean] true if vertical
+        def vertical?
+          /vert|vertical/.match?(direction)
+        end
+
+        # Is this wall horizontal?
+        # @return [Boolean] true if horizontal
+        def horizontal?
+          /horiz|horizontal/.match?(direction)
+        end
+      end
+
+      # Map Door
+      class Door < Poi
+        attribute :destination
+
+        # Is this door unlocked?
+        #
+        # @return [Boolean] true if unlocked
+        def unlocked?
+          true
+        end
+      end
+
+      # Map Coinpurse
+      class Coinpurse < Poi
+        attribute :value
+      end
+
+      # Map Shop
+      class Shop < Poi
+        attribute :inventory, []
+      end
+
+      # Map Item
+      class Item < Poi
+        attribute :description
+      end
+    end
+
+    # Map Interior
+    class Interior
+      include Attributable
+
+      attribute :name
+      attribute :width
+      attribute :height
+      attribute :x
+      attribute :y
+
+      attribute :pois, []
+
+      attribute :surface, Map::SURFACE_MARBLE
+
+      attribute :door
+
+      def initialize(interior_attrs)
+        merge_attributes interior_attrs
+      end
+
+      def to_s
+        name
+      end
+    end
+
+    # Load a new map
+    #
+    # @return [Map]
+    # @overload new(name)
+    #   Load a map with a given name
+    # @overload new(name, **attrs)
+    #   @param [String] name the name of the map to load
+    #   @param [Hash] attrs all additional attributes to load into the map
+    #   @note use :file to load a specific map file
+    def initialize(name, **attrs)
+      merge_attributes load_attributes_from_map(name, attrs.delete(:file))
+      merge_attributes attrs
+
+      load_pois
+      load_interiors
+      load_npcs
+
+      @boundary_width = width + 2
+      @boundary_height = height + 2
+
+      # @area = width * height
       # @perimeter = 2 * @area
 
       @locations = []
 
       @matrix = [[]]
-
-      @poi = @attributes['poi'] || []
     end
 
-    def build!(player)
-      raise 'cannot generate an empty map' unless (@attributes[:width] && @attributes[:height])
+    # Generate the map
+    def generate
+      raise 'cannot generate an empty map' unless width && height
 
-      # the @render string
-      map_surface = get_surface
-
+      # prefill map with empty elements
       @boundary_height.times do |y|
         @matrix[y] = []
+
         @boundary_width.times do |x|
-          non_surface = false
-          case x
-            when 0
-              if y == 0
-                @matrix[y][x] = Maps::CORNER_UPPER_LEFT
-
-                next
-              elsif y == @boundary_height - 1
-                @matrix[y][x] = Maps::CORNER_LOWER_LEFT
-
-                next
-              else
-                @matrix[y][x] = Maps::WALL_VERT
-
-                next
-              end
-            when @boundary_width - 1
-              if y == 0
-                @matrix[y][x] = Maps::CORNER_UPPER_RIGHT
-
-                next
-              elsif y == @boundary_height - 1
-                @matrix[y][x] = Maps::CORNER_LOWER_RIGHT
-
-                next
-              else
-                @matrix[y][x] = Maps::WALL_VERT
-
-                next
-              end
-            else
-              if y == 0 || y == @boundary_height - 1
-                @matrix[y][x] = Maps::WALL_HORIZ
-
-                next
-              end
-
-              if x == player.location[:x] && y == player.location[:y]
-                @matrix[y][x] = Maps::PLAYER
-                non_surface = true
-
-                next
-              end
-
-              @matrix[y][x] = map_surface
-
-              if @poi&.any?
-                @poi.each do |poi|
-                  @locations << [poi['x'], poi['y']] unless @locations.include? [poi['x'], poi['y']]
-                  if player.location[:x] == poi['x'] && player.location[:y] == poi['y']
-                    if poi['type'] == 'item' || poi['type'] == 'weapon' || poi['type'] == 'coinpurse'
-                      @poi.delete(poi)
-                    end
-                    if poi['consumable']
-                      if poi['consumable'].is_a? Hash
-                        # there is a condition.
-                        @poi.delete(poi) if player.get_av(poi['consumable']['unless'], false)
-                      else
-                        @poi.delete(poi) if @poi.include? poi
-                      end
-                    end
-
-                    return player.interact_with poi
-                  end
-                  if x == poi['x'] && y == poi['y']
-                    case poi['type']
-                      when 'shop'
-                        @matrix[y][x] = Maps::SHOP
-
-                        non_surface = true
-                      when 'coinpurse'
-                        @matrix[y][x] = Maps::COINPURSE
-
-                        non_surface = true
-                      when 'item', 'weapon'
-                        @matrix[y][x] = Maps::ITEM
-
-                        non_surface = true
-                      when 'bandit'
-                        @matrix[y][x] = Maps::BANDIT
-
-                        non_surface = true
-                      when 'tree'
-                        @matrix[y][x] = Maps::TREE
-
-                        non_surface = true
-                      when 'cave'
-                        @matrix[y][x] = Maps::CAVE
-
-                        non_surface = true
-                      when 'door'
-                        @matrix[y][x] = Maps::DOOR
-
-                        non_surface = true
-                      when 'wall'
-                        non_surface = true
-                        case poi['direction']
-                          when 'vertical', 'vert'
-                            @matrix[y][x] = Maps::WALL_VERT
-
-                        when 'horizontal', 'horiz'
-                            @matrix[y][x] = Maps::WALL_HORIZ
-                        end
-                      else
-                        @matrix[y][x] = Maps::OTHER
-
-                        non_surface = true
-                    end
-                    next
-                  end
-                end
-              end
-          end
-          non_surface = false
+          @matrix[y][x] = ''
         end
-
       end
 
-      draw_interiors!
+      draw_boundary_corners
+      draw_boundary_walls
+      draw_surface
+
+      draw_interiors
+
+      draw_pois
+
+      draw_npcs
+
+      draw_player if Game.player.x != -1 && Game.player.y != -1
     end
 
-    def built?
+    # Check if this map has been generated yet.
+    #
+    # @note this checks if the matrix has elements within to detect generation
+    # @return [Boolean] true when generated
+    def generated?
       @matrix&.first&.any?
     end
 
-    def render(player)
+    def render
       map = String.new
 
       @matrix.each do |line|
@@ -223,131 +239,284 @@ module BanditMayhem
     end
 
     # draw the @render
-    # @param player because we need the players position in relation to the map
-    def draw_map(player)
-      puts 'You are currently in ' + @attributes[:name].to_s.green
+    def draw_map
+      puts 'You are currently in ' + name.green
 
       # build the map
-      build!(player)
+      generate
 
       # render the map
-      puts render(player)
+      puts render
     end
 
     # exit a location
-    def exit_location(player)
+    def exit_location
       # first we should favor the @render's `exits` attribute.  otherwise, calculate the nearest free space
-      current_location = [player.location[:x], player.location[:y]]
+      current_location = [Game.player.location[:x], Game.player.location[:y]]
 
-      @poi.each do |poi|
-        if [poi['x'], poi['y']] == current_location
-          if poi['exits']
-            player.location[:x] = poi['exits']['x'] || player.location[:x]
-            player.location[:y] = poi['exits']['y'] || player.location[:y]
+      pois.each do |point|
+        if [point['x'], point['y']] == current_location
+          if point['exits']
+            Game.player.location[:x] = point['exits']['x'] || Game.player.location[:x]
+            Game.player.location[:y] = point['exits']['y'] || Game.player.location[:y]
           else
-            player.location[:y] += 1
+            Game.player.location[:y] += 1
           end
         end
       end
     end
 
-    def get_entity_at(location)
-      raise 'need x and y coordinates' unless location[:x]&.is_a? Numeric and location[:y]&.is_a? Numeric
+    # Get an entity at a specific coordinate
+    #
+    # @param [Integer] x the X coordinate
+    # @param [Integer] y the Y coordinate
+    # @return [Poi,Character::Npc,nil] the entity at a specific coordinate
+    def at(x:, y:)
+      return if pois.empty? && npcs.empty? && interiors.empty?
 
-      if @poi&.any?
-        @poi.each do |poi|
-          return poi if poi['x'] == location[:x] && poi['y'] == location[:y]
-        end
+      poi = pois.select { |point| point.x == x && point.y == y }.first
+      npc = npcs.select { |point| point.x == x && point.y == y }.first
+
+      return poi unless poi.nil?
+      return npc unless npc.nil?
+
+      interior = interior_at(x: x, y: y)
+
+      return unless interior
+
+      # try to get the poi from inside an interior
+      interior.pois.select do |point|
+        point.x == (x / 2 - interior.width) &&
+          point.y == (y - interior.height)
+      end.first
+    end
+
+    # Get an interior at an intersection of coords
+    #
+    # @param [Integer] x the X coordinate
+    # @param [Integer] y the Y coordinate
+    # @return [Map::Interior,nil] the interior if found. nil if not
+    def interior_at(x:, y:)
+      interiors.each do |interior|
+        intercept = [(interior.x..interior.x + interior.width), (interior.y..interior.y + interior.height)]
+
+        return interior if intercept[0].include?(x) && intercept[1].include?(y)
       end
+
       nil
     end
 
-    def get_char_at(location)
-      raise 'need x and y coordinates' unless location[:x]&.is_a? Numeric and location[:y]&.is_a? Numeric
-      raise 'map needs built first' unless built?
+    # Get a character from the map's matrix if exists
+    #
+    # @param [Integer] x the x coordinate
+    # @param [Integer] y the y coordinate
+    # @return [String,nil] the character rendered at the coordinate
+    def char_at(x:, y:)
+      generate unless generated?
 
-      @matrix[location[:y]][location[:x]]
+      @matrix[y][x]
+    end
+
+    # Map name
+    def to_s
+      name
     end
 
     private
 
-    def draw_interiors!
-      if built?
-        if attributes[:interiors]&.any?
-          attributes[:interiors].each do |interior|
-            interior_width = interior[:width] + 2
-            interior_height = interior[:height] + 2
+    # Load map data from a YAML file
+    #
+    # @overload load_attributes_from_map(name)
+    #   @param [String] the name of the map file (without yaml suffix)
+    # @overload load_attributes_from_map(name, file)
+    #   @param [String] the name of the map file (without yaml suffix)
+    #   @param [String] the explicit map file to load
+    def load_attributes_from_map(name, file = nil)
+      map_file = file || File.expand_path(File.join('maps', "#{name}.yml"), __dir__)
+      return {} unless File.exist?(map_file)
 
-            interior_height.times do |y|
-                _y = interior[:y] + y
-              interior_width.times do |x|
-                _x = interior[:x] + x
+      map = YAML.load_file(map_file)
 
-                if interior[:door]
-                  next if x == (interior[:door][:x] - 1) && y == (interior[:door][:y] - 1)
-                end
+      # check formatting of map file
+      raise MapError, 'Invalid map format' unless map.is_a? Hash
 
-                case _x
-                when interior[:x]
-                  if _y == interior[:y]
-                    @matrix[_y][_x] = Maps::INTERIOR_CORNER_UPPER_LEFT
+      map
+    end
 
-                    next
-                  elsif _y == (interior[:y] + interior_height - 1)
-                    @matrix[_y][_x] = Maps::INTERIOR_CORNER_LOWER_LEFT
-
-                    next
+    # Take map pois and convert in-place to their respective data structure
+    def load_pois
+      pois.each_with_index do |poi, i|
+        pois[i] = if poi[:type]
+                    Poi.const_get(poi[:type].classify).new(poi)
                   else
-                    @matrix[_y][_x] = Maps::INTERIOR_WALL_VERT
-
-                    next
+                    Poi.new(poi)
                   end
-                when (interior[:x] + interior_width - 1)
-                  if _y == interior[:y]
-                    @matrix[_y][_x] = Maps::INTERIOR_CORNER_UPPER_RIGHT
+      end
+    end
 
-                    next
-                  elsif _y == (interior[:y] + interior_height - 1)
-                    @matrix[_y][_x] = Maps::INTERIOR_CORNER_LOWER_RIGHT
+    # Take map interiors and convert in-place to their respective data structure
+    def load_interiors
+      interiors.each_with_index do |interior, i|
+        new_interior = Interior.new(interior)
 
-                    next
-                  else
-                    @matrix[_y][_x] = Maps::INTERIOR_WALL_VERT
-                  end
-                else
-                  # if y == interior[:y] || y == interior[:height] - 1
-                  if _y == interior[:y] || _y == (interior[:y] + interior_height - 1)
-                    @matrix[_y][_x] = Maps::INTERIOR_WALL_HORIZ
+        new_interior.pois.each_with_index do |poi, i|
+          new_interior.pois[i] = if poi[:type]
+                                   Poi.const_get(poi[:type].classify).new(poi)
+                                 else
+                                   Poi.new(poi)
+                                 end
+        end
 
-                    next
-                  end
+        interiors[i] = new_interior
+      end
+    end
 
-                end
+    def load_npcs
+      npcs.each_with_index do |npc, i|
+        npcs[i] = Characters::Npc.new(npc)
+      end
+    end
+
+    def draw_boundary_corners
+      # four boundary corners
+      @matrix[0][0] = CORNER_UPPER_LEFT
+      @matrix[0][-1] = CORNER_UPPER_RIGHT
+      @matrix[-1][0] = CORNER_LOWER_LEFT
+      @matrix[-1][-1] = CORNER_LOWER_RIGHT
+    end
+
+    def draw_boundary_walls
+      # top / bottom walls
+      (1..width).each do |x|
+        @matrix[0][x] = WALL_HORIZ
+        @matrix[-1][x] = WALL_HORIZ
+      end
+
+      # left / right walls
+      (1..height).each do |y|
+        @matrix[y][0] = WALL_VERT
+        @matrix[y][-1] = WALL_VERT
+      end
+    end
+
+    # Draw the surface of the map
+    #
+    # @see .surface
+    def draw_surface
+      (1..height).each do |y|
+        (1..width).each do |x|
+          @matrix[y][x] = surface
+        end
+      end
+    end
+
+    # Draw interiors specified in the map file
+    def draw_interiors
+      interiors.each do |interior|
+
+        interior_width = interior.width + 2
+        interior_height = interior.height + 2
+
+        interior_height.times do |y|
+            _y = interior.y + y
+          interior_width.times do |x|
+            _x = interior.x + x
+
+            if interior.door
+              next if x == (interior.door[:x] - 1) && y == (interior.door[:y] - 1)
+            end
+
+            case _x
+            when interior.x
+              if _y == interior.y
+                @matrix[_y][_x] = INTERIOR_CORNER_UPPER_LEFT
+
+                next
+              elsif _y == (interior.y + interior_height - 1)
+                @matrix[_y][_x] = INTERIOR_CORNER_LOWER_LEFT
+
+                next
+              else
+                @matrix[_y][_x] = INTERIOR_WALL_VERT
+
+                next
               end
+            when (interior.x + interior_width - 1)
+              if _y == interior.y
+                @matrix[_y][_x] = INTERIOR_CORNER_UPPER_RIGHT
+
+                next
+              elsif _y == (interior.y + interior_height - 1)
+                @matrix[_y][_x] = INTERIOR_CORNER_LOWER_RIGHT
+
+                next
+              else
+                @matrix[_y][_x] = INTERIOR_WALL_VERT
+              end
+            else
+              # if y == interior.y || y == interior[:height] - 1
+              if _y == interior.y || _y == (interior.y + interior_height - 1)
+                @matrix[_y][_x] = INTERIOR_WALL_HORIZ
+
+                next
+              end
+
             end
           end
         end
       end
     end
 
+    # Draw POIs on the map
+    def draw_pois
+      # draw map pois
+      pois.each do |poi|
+        @matrix[poi.y][poi.x] = poi.rune
+      end
+
+      interiors.each do |interior|
+        interior.pois.each do |poi|
+          @matrix[interior.y + poi.y][interior.x + poi.x] = poi.rune
+        end
+      end
+    end
+
+    # Draw non-playable characters on the map
+    def draw_npcs
+      npcs.each do |npc|
+        @matrix[npc.y][npc.x] = NPC
+      end
+    end
+
+    # Draw the player on the map
+    def draw_player
+      @matrix[Game.player.y][Game.player.x] = PLAYER
+    end
+
     def remove_entity(*args)
       if args[0].is_a? Hash
-        @poi.each do |poi|
+        poi.each do |poi|
           if poi['x'] == args[0][:x] && poi['y'] == args[0][:y]
-            @poi.delete(poi)
+            poi.delete(poi)
           end
         end
       end
     end
 
-    def get_surface
-      case @attributes['type']
+    # The surface of the map that the player walks on
+    #
+    # @return [String]
+    # @example
+    #   Map.new('town').surface #=> '.'
+    #   Map.new('field').surface #=> ','
+    def surface
+      case type
         when 'town'
-          Maps::SURFACE_STONE
+          SURFACE_STONE
         when 'plains'
-          Maps::SURFACE_GRASS
+          SURFACE_GRASS
         else
-          Maps::SURFACE_DEFAULT
+          SURFACE_DEFAULT
       end
     end
   end

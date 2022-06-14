@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'items/health_potion'
 
 describe BanditMayhem::Items::HealthPotion do

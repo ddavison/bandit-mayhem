@@ -3,7 +3,7 @@ name: jail
 width: 3
 height: 3
 
-poi:
+pois:
   - type: wall
     direction: vert
     x: 1

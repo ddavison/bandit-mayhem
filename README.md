@@ -23,8 +23,6 @@ Traverse through plains, towns and other areas collecting money, weapons and ite
 ```bash
 $ git clone https://github.com/ddavison/bandit-mayhem.git
 $ cd bandit-mayhem
-$ brew install portaudio
-$ brew install mpg123
 $ bundle install
 $ ruby game.rb
 ```
@@ -32,6 +30,6 @@ $ ruby game.rb
 ## How to play
 Type `/help` in the console if you are lost.
 
-Use `wasd` to move.  To move, type in the respective direction, `w - Up, s - Down, a - Left, d - Right` and press enter.
+Use <kbd>w</kbd>, <kbd>a</kbd>, <kbd>s</kbd>, <kbd>d</kbd> to move.  Type in the respective direction, `w - Up, s - Down, a - Left, d - Right` and press enter.
 
 You can also chain moves.  For example, typing: `w w w w d` and pressing `ENTER` will go up four spaces, and right, one.

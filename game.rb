@@ -1,9 +1,9 @@
-$: << File.join(File.expand_path(File.dirname(__FILE__)), 'lib')
+# frozen_string_literal: true
 
+$: << File.join(File.expand_path(File.dirname(__FILE__)), 'lib')
 
 require_relative 'lib/commands'
 require_relative 'lib/settings'
-require_relative 'lib/media_player'
 require_relative 'lib/characters/player'
 
 require 'colorize'
@@ -93,8 +93,6 @@ module BanditMayhem
     # game initialization
     def initialize(name)
       @cmds = []
-      media_player = BanditMayhem::MediaPlayer.new
-      Game.media_player = media_player
       @settings = BanditMayhem::Settings.new
       @player = BanditMayhem::Characters::Player.new({name: name})
       @command_proc = Commands.new(self)
@@ -111,27 +109,11 @@ module BanditMayhem
       update
     end
 
-    def self.media_player=(media_player)
-      @media_player = media_player
-    end
-
-    def self.media_player
-      @media_player
-    end
-
     def draw
     end
 
     def update
       # show health
-      if @settings.get('music', true)
-        unless Game.media_player.playing?
-          unless Game.media_player.playing_level? @player.location[:map].to_s
-            # start playing the map track unless it's already playing
-            Game.media_player.play_level_song(@player.location[:map].to_s)
-          end
-        end
-      end
 
       # Utils.cls
       @player.location[:map].draw_map(@player)
