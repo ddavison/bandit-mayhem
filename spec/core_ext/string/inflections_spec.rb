@@ -28,6 +28,7 @@ module BanditMayhem
         'TestClass'        | 'test_class'
         'Class'            | 'class'
         'AnotherTestClass' | 'another_test_class'
+        'Test Class'       | 'test_class'
       end
 
       with_them do

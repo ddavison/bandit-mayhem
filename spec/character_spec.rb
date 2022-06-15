@@ -16,6 +16,8 @@ module BanditMayhem
       allow(Game).to receive(:player).and_return(Player.new(name: 'unused')) # prevent player from being rendered.
       allow(Game).to receive(:map).and_return(map)
 
+      character.map = map
+
       map.generate
       puts map.render
     end
@@ -29,6 +31,7 @@ module BanditMayhem
         expect(character.def).to eq(0)
         expect(character.gold).to eq(0)
 
+        expect(character.map).to eq(map)
         expect(character.x).to eq(-1)
         expect(character.y).to eq(-1)
       end
@@ -80,11 +83,15 @@ module BanditMayhem
     end
 
     describe 'movement' do
-      context 'when walls are in the way' do
-        before do
-          character.x = character.y = 2 # set character to (2, 2)
-        end
+      let(:map) do
+        Map.new('empty map', width: 3, height: 3)
+      end
 
+      before do
+        character.x = character.y = 2 # set character to (2, 2)
+      end
+
+      context 'when walls are in the way' do
         let(:map) do
           Map.new('map with walls', width: 3, height: 3, pois: [
                     { type: 'wall', direction: 'horiz', x: 2, y: 1 }, # north
@@ -110,8 +117,158 @@ module BanditMayhem
           character.right # attempt to go right
 
           expect(character.x).to eq(2) # x doesn't change
-
         end
+      end
+
+      describe '#up' do
+        before do
+          character.up
+        end
+
+        it 'moves north' do
+          expect(character.y).to eq(1)
+        end
+      end
+
+      describe '#down' do
+        before do
+          character.down
+        end
+
+        it 'moves south' do
+          expect(character.y).to eq(3)
+        end
+      end
+
+      describe '#left' do
+        before do
+          character.left
+        end
+
+        it 'moves west' do
+          expect(character.x).to eq(1)
+        end
+      end
+
+      describe '#right' do
+        before do
+          character.right
+        end
+
+        it 'moves east' do
+          expect(character.x).to eq(3)
+        end
+      end
+
+      describe 'when map has borders' do
+        let(:map) do
+          Map.new('with borders', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'with_borders.yml')))
+        end
+
+        before do
+          character.x = character.y = 1
+        end
+
+        it 'moves north' do
+          character.up
+          expect(character.map).to eq(map.north)
+        end
+
+        it 'moves south' do
+          character.down
+          expect(character.map).to eq(map.south)
+        end
+
+        it 'moves west' do
+          character.left
+          expect(character.map).to eq(map.west)
+        end
+
+        it 'moves east' do
+          character.right
+          expect(character.map).to eq(map.east)
+        end
+      end
+
+      describe 'when at map boundary' do
+        let(:map) do
+          Map.new('jail map', width: 1, height: 1)
+        end
+
+        before do
+          character.x = character.y = 1
+        end
+
+        it 'cannot move in any direction', :aggregate_failures do
+          # up
+          character.up
+
+          expect(character.map).to eq(map)
+          expect(character.y).to eq(1)
+
+          # down
+          character.down
+
+          expect(character.map).to eq(map)
+          expect(character.y).to eq(1)
+
+          # east
+          character.right
+
+          expect(character.map).to eq(map)
+          expect(character.x).to eq(1)
+
+          # west
+          character.left
+
+          expect(character.map).to eq(map)
+          expect(character.x).to eq(1)
+        end
+      end
+
+      describe 'when there is a door at the boundary' do
+        let(:map) do
+          Map.new('all doors', width: 1, height: 1, pois: [
+                    { type: 'door', x: 1, y: 0 }, # north
+                    { type: 'door', x: 1, y: 2 }, # south
+                    { type: 'door', x: 0, y: 1 }, # west
+                    { type: 'door', x: 2, y: 1 }  # east
+                  ])
+        end
+
+        before do
+          character.x = character.y = 1
+
+          puts map.render
+        end
+
+        it '#up allows the character to move into the location of the door' do
+          character.up
+
+          expect(character.y).to eq(0)
+        end
+
+        it '#down allows the character to move into the location of the door' do
+          character.down
+
+          expect(character.y).to eq(2)
+        end
+
+        it '#left allows the character to move into the location of the door' do
+          character.left
+
+          expect(character.x).to eq(0)
+        end
+
+        it '#right allows the character to move into the location of the door' do
+          character.right
+
+          expect(character.x).to eq(2)
+        end
+      end
+
+      describe 'when character is out of bounds' do
+        pending 'it resets the character safely'
       end
     end
 
@@ -138,7 +295,7 @@ module BanditMayhem
 
       describe '#south' do
         it 'returns the npc below the character' do
-          expect(character.south).to be_a(Characters::Npc)
+          expect(character.south).to be_a(Npc)
         end
       end
 
@@ -151,6 +308,123 @@ module BanditMayhem
       describe '#west' do
         it 'returns the shop to the left of the character' do
           expect(character.west).to be_a(Map::Poi::Shop)
+        end
+      end
+    end
+
+    describe 'interactions' do
+      before do
+        character.x = character.y = 2
+      end
+
+      let(:map) do
+        Map.new('interactions', width: 3, height: 3, pois: [
+                  { type: 'door', x: 2, y: 1, destination: { x: 9, y: 9 } }, # .north
+                  { type: 'item', x: 3, y: 2 }, # .east
+                  { type: 'shop', x: 1, y: 2 }  # .west
+                ], npcs: [
+                  { name: 'test', x: 2, y: 3 }  # .south
+                ])
+      end
+
+      context 'when specifying directions' do
+        it '#up accepts a block' do
+          character.up do |entity|
+            expect(entity).to be_a(Map::Poi::Door)
+          end
+        end
+
+        it '#down accepts a block' do
+          character.down do |entity|
+            expect(entity).to be_a(Npc)
+          end
+        end
+
+        it '#left accepts a block' do
+          character.left do |entity|
+            expect(entity).to be_a(Map::Poi::Shop)
+          end
+        end
+
+        it '#right accepts a block' do
+          character.right do |entity|
+            expect(entity).to be_a(Map::Poi::Item)
+          end
+        end
+      end
+
+      context 'when interacting with a door' do
+        before do
+          character.up
+        end
+
+        it 'warps the player', :aggregate_failures do
+          expect(character.x).to eq(9)
+          expect(character.y).to eq(9)
+        end
+      end
+    end
+
+    describe '#say' do
+      it 'says something' do
+        expect { character.say('hi') }.to output(/#{character.name}/).to_stdout
+        expect { character.say('hi') }.to output(/hi/).to_stdout
+      end
+    end
+
+    describe '#warp' do
+      let(:blank_map) do
+        Map.new('blank', name: 'blank', width: 1, height: 1)
+      end
+
+      context 'when warping between maps' do
+        it 'warps between maps' do
+          expect(character.map).to eq(map)
+
+          character.warp(map: blank_map.name)
+          expect(character.map).to eq(blank_map)
+        end
+
+        context 'when coordinates are specified' do
+          before do
+            character.warp(map: blank_map, x: 9, y: 9)
+          end
+
+          it 'warps to the coordinates', :aggregate_failures do
+            expect(character.x).to eq(9)
+            expect(character.y).to eq(9)
+          end
+
+          it 'warps to the new map' do
+            expect(character.map).to eq(blank_map)
+          end
+        end
+
+        context 'when coordinates are not specified' do
+          before do
+            character.x = character.y = 9
+            character.warp(map: blank_map)
+          end
+
+          it 'retains the existing character\'s coordinates', :aggregate_failures do
+            expect(character.x).to eq(9)
+            expect(character.y).to eq(9)
+          end
+        end
+      end
+
+      it 'warps to the new coordinates' do
+        character.warp(x: 9, y: 9)
+
+        expect(character.x).to eq(9)
+        expect(character.y).to eq(9)
+      end
+
+      context 'when warping onto an item' do
+        it 'interacts with that item' do
+          character.warp(x: 4, y: 1)
+
+          expect(character.items).to have_a(Items::Baton)
         end
       end
     end

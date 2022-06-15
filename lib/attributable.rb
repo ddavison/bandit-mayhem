@@ -37,8 +37,20 @@ module BanditMayhem
           @attributes
         end
 
+        # All declared attributes
+        #
+        # @return [Hash]
         def attributes
           self.class.attributes
+        end
+
+        # All current and calculated attributes
+        #
+        # @return [Hash]
+        def current_attributes
+          attributes.each_key.each_with_object({}) do |key, h|
+            h[key] = public_send(key)
+          end
         end
 
         # Merge new attributes into existing attributes or create new attributes

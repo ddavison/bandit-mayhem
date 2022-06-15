@@ -6,7 +6,7 @@ height: 10
 pois:
   - type: door
     destination:
-      location: spec/fixtures/maps/qasmoke_door
+      map: ../../spec/fixtures/maps/qasmoke_door
       x: 1
       y: 1
     x: 1
@@ -21,7 +21,7 @@ pois:
     y: 1
 
   - type: item
-    name: SmokeItem
+    name: baton
     x: 4
     y: 1
 
@@ -39,6 +39,9 @@ npcs:
   - name: Some Dude
     x: 5
     y: 1
+    dialog:
+      - What up?:
+          Not much, you?: Just testing.
 
 interiors:
   - name: Test Room

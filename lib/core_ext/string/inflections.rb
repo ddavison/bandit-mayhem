@@ -16,10 +16,12 @@ class String
   #   'TestClass'.underscore #=> 'test_class'
   # @example
   #   'Class'.underscore #=> 'class'
+  # @example
+  #   'Test Class'.underscore #=> 'test_class'
   def underscore
     chars.each_with_object(+'') do |c, str|
       str << '_' if c.match?(/[A-Z]/) && !str.size.zero?
-      str << c.downcase
+      str << c.downcase unless c == ' '
     end
   end
 end

@@ -1,0 +1,43 @@
+---
+name: Strick Household
+width: 5
+height: 5
+
+npcs:
+  - name: Gabbi Strick
+    x: 1
+    y: 1
+    dialog:
+      I was worried you would never wake up!:
+        - What happened?:
+            - I found you passed out by the road.
+
+pois:
+  - type: item
+    name: baton
+    description: this looks familiar...
+    x: 5
+    y: 5
+
+  - type: coinpurse
+    x: 4
+    y: 5
+    value: 10
+
+  - type: door
+    x: 1
+    y: 0
+    destination:
+      map: lynwood/town_square
+      x: 5
+      y: 5
+
+interiors:
+  - name: Guest room
+    x: 0
+    y: 4
+    height: 1
+    width: 2
+    door:
+      x: 2
+      y: 1

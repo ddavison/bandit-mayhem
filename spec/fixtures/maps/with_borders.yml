@@ -3,7 +3,8 @@ name: this map has borders
 width: 1
 height: 1
 
-north: spec/fixtures/maps/map_to_the_north
-south: spec/fixtures/maps/map_to_the_south
-east: spec/fixtures/maps/map_to_the_east
-west: spec/fixtures/maps/map_to_the_west
+# ../../ is required as a prefix for all of these borders since map.rb loads maps from lib/maps/
+north: ../../spec/fixtures/maps/map_to_the_north
+south: ../../spec/fixtures/maps/map_to_the_south
+east: ../../spec/fixtures/maps/map_to_the_east
+west: ../../spec/fixtures/maps/map_to_the_west

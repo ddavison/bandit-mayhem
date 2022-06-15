@@ -31,6 +31,10 @@ module BanditMayhem
     end
 
     describe '#at' do
+      before do
+        map.generate
+      end
+
       it 'returns the door at 1,1 in qasmoke', :aggregate_failures do
         poi = map.at(x: 1, y: 1)
 
@@ -189,7 +193,7 @@ module BanditMayhem
         end
 
         it 'renders an NPC' do
-          expect(map.at(x: 5, y: 1)).to be_a(Characters::Npc)
+          expect(map.at(x: 5, y: 1)).to be_a(Npc)
         end
       end
 
@@ -243,6 +247,40 @@ module BanditMayhem
         expect(map.char_at(x: 3, y: 1)).to eq(Map::SHOP)
         expect(map.char_at(x: 4, y: 1)).to eq(Map::ITEM)
         expect(map.char_at(x: 5, y: 1)).to eq(Map::NPC)
+      end
+    end
+
+    describe 'borders' do
+      subject(:map) do
+        described_class.new('with borders', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'with_borders.yml')))
+      end
+
+      describe '#north' do
+        it 'returns the map to the north' do
+          expect(map.north).to be_a(Map)
+          expect(map.north.name).to eq('north_map')
+        end
+      end
+
+      describe '#south' do
+        it 'returns the map to the south' do
+          expect(map.south).to be_a(Map)
+          expect(map.south.name).to eq('south_map')
+        end
+      end
+
+      describe '#west' do
+        it 'returns the map to the west' do
+          expect(map.west).to be_a(Map)
+          expect(map.west.name).to eq('west_map')
+        end
+      end
+
+      describe '#east' do
+        it 'returns the map to the east' do
+          expect(map.east).to be_a(Map)
+          expect(map.east.name).to eq('east_map')
+        end
       end
     end
   end

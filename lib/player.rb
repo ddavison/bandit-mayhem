@@ -24,6 +24,13 @@ module BanditMayhem
         puts command
 
         exit if /q|quit|exit/.match?(command)
+
+        # TODO: refactor later
+        if command.start_with? 'warp'
+          _, x, y = command.split(' ')
+
+          warp(x: x.to_i, y: y.to_i)
+        end
       when 'w'
         up
       when 'a'
@@ -33,8 +40,28 @@ module BanditMayhem
       when 'd'
         right
       else
-        raise MovementError, "Cannot move in the direction `#{char}`"
+        # ignore
+        # raise MovementError, "Cannot move in the direction `#{char}`"
       end
+    end
+
+    def interact_with(what)
+      warn 'Teleporting through door' if what.is_a?(Map::Poi::Door)
+
+      warn 'Engaging in conversation' if what.is_a?(Npc)
+
+      puts "You found #{what.value}" if what.is_a?(Map::Poi::Coinpurse)
+
+      puts "You found an item #{what}" if what.is_a?(Map::Poi::Item)
+
+      super
+    end
+
+    def move(direction)
+      super(direction)
+
+      # change map
+      Game.map = map unless Game.map == map
     end
 
     # Player name

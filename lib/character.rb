@@ -6,6 +6,7 @@ module BanditMayhem
   # Character
   class Character
     include Attributable
+    include Interactable
 
     attr_accessor :weapon,
                   :location
@@ -17,12 +18,21 @@ module BanditMayhem
     attribute :def, 0
     attribute :gold, 0
 
+    # The avatar which to print (ASCII art)
+    attribute :avatar
+
+    # The faction to which this character belongs
+    attribute :faction
+
+    # What map this character belongs to
+    attribute :map
+
     # character's position in the map
     attribute :x, -1
     attribute :y, -1
 
     # Items in inventory
-    attribute :items, []
+    attribute :items, Inventory.new
 
     MovementError = Class.new(RuntimeError)
 
@@ -48,72 +58,60 @@ module BanditMayhem
       health <= 0
     end
 
-    # Warp to a specific coordinate within the map
-    def warp(coords)
-      if coords.is_a? Array
-        @location[:x], @location[:y] = coords[0],coords[1]
-      else
-        @location[:x] = coords[:x].to_i if coords[:x]
-        @location[:y] = coords[:y].to_i if coords[:y]
-      end
-
-      @location[:last] = { x: @location[:x], y: @location[:y] }
-
-      interact_with(@location)
-    end
-
     # Move the character up if able
     def up
+      yield north if block_given?
+
       move(:up) if can_move?(:up)
     end
 
     # Move the character down if able
     def down
+      yield south if block_given?
+
       move(:down) if can_move?(:down)
     end
 
     # Move the character left if able
     def left
+      yield west if block_given?
+
       move(:left) if can_move?(:left)
     end
 
     # Move the character right if able
     def right
+      yield east if block_given?
+
       move(:right) if can_move?(:right)
     end
 
     # Get the entity, in the map, to the north of the character. nil if none
     #
-    # @return [Map::Poi,Characters::Npc,nil]
+    # @return [Map::Poi,Npc,nil]
     def north
-      Game.map.at(x: x, y: y - 1)
+      map.at(x:, y: y - 1)
     end
 
     # Get the entity, in the map, to the south of the character. nil if none
     #
-    # @return [Map::Poi,Characters::Npc,nil]
+    # @return [Map::Poi,Npc,nil]
     def south
-      Game.map.at(x: x, y: y + 1)
+      map.at(x:, y: y + 1)
     end
 
     # Get the entity, in the map, to the west of the character. nil if none
     #
-    # @return [Map::Poi,Characters::Npc,nil]
+    # @return [Map::Poi,Npc,nil]
     def west
-      Game.map.at(x: x - 1, y: y)
+      map.at(x: x - 1, y:)
     end
 
     # Get the entity, in the map, to the east of the character. nil if none
     #
-    # @return [Map::Poi,Characters::Npc,nil]
+    # @return [Map::Poi,Npc,nil]
     def east
-      Game.map.at(x: x + 1, y: y)
-    end
-
-    # Used for map detection. If the self collides with a shop, for example.
-    def interact
-      entity = Game.map.at(x: self.x, y: self.y)
-      yield entity if block_given?
+      map.at(x: x + 1, y:)
     end
 
     # ==== MAIN BATTLE FUNC === #
@@ -220,6 +218,32 @@ module BanditMayhem
       end
     end
 
+    # Say something
+    #
+    # @param [String] message what to say
+    def say(message)
+      puts "#{name.cyan}: #{message}"
+    end
+
+    # Warp somewhere
+    #
+    # @param [Map] map the new map to warp to
+    # @param [Integer] x the X coordinate
+    # @param [Integer] y the Y coordinate
+    def warp(x: self.x, y: self.y, map: self.map)
+      self.map = Map.new(map)
+
+      self.x = x
+      self.y = y
+
+      interact_with(self.map.at(x:, y:))
+    end
+
+    # Character's name
+    def to_s
+      name
+    end
+
     private
 
     # Move the character in a specific direction
@@ -232,58 +256,72 @@ module BanditMayhem
     def move(direction)
       case direction
       when :up, :w
-        if y == 1
-          if Game.map.north
-            Game.map = BanditMayhem::Map.new(Game.map.north)
+        is_door = north.is_a?(Map::Poi::Door)
 
-            self.y = Game.map.height
+        if y == 1 && !is_door
+          if map.north
+            self.map = map.north
+
+            self.y = map.height
           else
             puts "can't go north!".red
           end
         else
-          self.y -= 1
+          interact_with(north) if north
+
+          self.y -= 1 unless is_door
         end
       when :down, :s
-        if y == Game.map.height
-          if Game.map.south
-            Game.map = BanditMayhem::Map.new(Game.map.south)
+        is_door = south.is_a?(Map::Poi::Door)
+
+        if y == map.height && !is_door
+          if map.south
+            self.map = map.south
 
             self.y = 1
           else
             puts "can't go south!".red
           end
         else
-          self.y += 1
+          interact_with(south) if south
+
+          self.y += 1 unless is_door
         end
       when :left, :a
-        if x == 1
-          if Game.map.west
-            Game.map = BanditMayhem::Map.new(Game.map.west)
+        is_door = west.is_a?(Map::Poi::Door)
 
-            self.x = Game.map.width
+        if x == 1 && !is_door
+          if map.west
+            self.map = map.west
+
+            self.x = map.width
           else
             puts "can't go west!".red
           end
         else
-          self.x -= 1
+          interact_with(west) if west
+
+          self.x -= 1 unless is_door
         end
       when :right, :d
-        if x == Game.map.width
-          if Game.map.east
-            Game.map = BanditMayhem::Map.new(Game.map.east)
+        is_door = east.is_a?(Map::Poi::Door)
+
+        if x == map.width && !is_door
+          if map.east
+            self.map = map.east
 
             self.x = 1
           else
             puts "can't go east!".red
           end
         else
-          self.x += 1
+          interact_with(east) if east
+
+          self.x += 1 unless is_door
         end
       else
         raise MovementError, "Cannot move in the direction `#{direction}`"
       end
-
-      yield interact
     end
 
     # Can this character move in a specific direction?

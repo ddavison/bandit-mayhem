@@ -65,6 +65,7 @@ module BanditMayhem
     # Point of Interest
     class Poi
       include Attributable
+      include Interactable
 
       attribute :name
       attribute :x
@@ -122,11 +123,26 @@ module BanditMayhem
         def unlocked?
           true
         end
+
+        # Traverse through the door
+        # @param [Character] character
+        def interact_with(character)
+          character.warp(**destination) if unlocked?
+
+          return warn "Teleporting #{character} to #{destination}" if unlocked?
+
+          warn 'Cant teleport as the door is locked'
+        end
       end
 
       # Map Coinpurse
       class Coinpurse < Poi
         attribute :value
+
+        # Add gold to the character's wallet
+        def interact_with(what)
+          what.gold += value if what.respond_to?(:gold)
+        end
       end
 
       # Map Shop
@@ -137,6 +153,17 @@ module BanditMayhem
       # Map Item
       class Item < Poi
         attribute :description
+
+        # Add item to inventory
+        def interact_with(what)
+          what.items << Items.const_get(name.underscore.classify).new(current_attributes) if what.respond_to?(:items)
+        end
+      end
+
+      # Map Tree
+      class Tree < Poi
+        # Trees can contain items hidden within them
+        attribute :items
       end
     end
 
@@ -238,6 +265,42 @@ module BanditMayhem
       map
     end
 
+    # Return the map to the north. nil if none
+    #
+    # @return [Map,nil]
+    def north
+      return unless @north
+
+      @north_map ||= Map.new(@north)
+    end
+
+    # Return the map to the south. nil if none
+    #
+    # @return [Map,nil]
+    def south
+      return unless @south
+
+      @south_map ||= Map.new(@south)
+    end
+
+    # Return the map to the east. nil if none
+    #
+    # @return [Map,nil]
+    def east
+      return unless @east
+
+      @east_map ||= Map.new(@east)
+    end
+
+    # Return the map to the west. nil if none
+    #
+    # @return [Map,nil]
+    def west
+      return unless @west
+
+      @west_map ||= Map.new(@west)
+    end
+
     # draw the @render
     def draw_map
       puts 'You are currently in ' + name.green
@@ -332,7 +395,7 @@ module BanditMayhem
     #   @param [String] the name of the map file (without yaml suffix)
     #   @param [String] the explicit map file to load
     def load_attributes_from_map(name, file = nil)
-      map_file = file || File.expand_path(File.join('maps', "#{name}.yml"), __dir__)
+      map_file = file || File.expand_path(File.join('lib', 'maps', "#{name}.yml"))
       return {} unless File.exist?(map_file)
 
       map = YAML.load_file(map_file)
@@ -347,7 +410,7 @@ module BanditMayhem
     def load_pois
       pois.each_with_index do |poi, i|
         pois[i] = if poi[:type]
-                    Poi.const_get(poi[:type].classify).new(poi)
+                    Poi.const_get(poi[:type].underscore.classify).new(poi)
                   else
                     Poi.new(poi)
                   end
@@ -371,12 +434,19 @@ module BanditMayhem
       end
     end
 
+    # Load NPCs into the map
     def load_npcs
       npcs.each_with_index do |npc, i|
-        npcs[i] = Characters::Npc.new(npc)
+        npcs[i] = begin
+                    Characters.const_get(npc[:name].underscore.classify).new(npc)
+                  rescue NameError
+                    warn "NPC doesn't exist. #{npc[:name]}"
+                    Npc.new(npc)
+                  end
       end
     end
 
+    # Draw the corners of the map
     def draw_boundary_corners
       # four boundary corners
       @matrix[0][0] = CORNER_UPPER_LEFT
@@ -385,6 +455,7 @@ module BanditMayhem
       @matrix[-1][-1] = CORNER_LOWER_RIGHT
     end
 
+    # Draw the walls of the map
     def draw_boundary_walls
       # top / bottom walls
       (1..width).each do |x|

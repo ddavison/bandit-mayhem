@@ -33,5 +33,13 @@ module BanditMayhem
         expect(attributed_class.str).to eq(20)
       end
     end
+
+    describe '#current_attributes' do
+      it 'has all calculated attributes' do
+        expect(attributed_class.current_attributes).to eq({
+          health: 100, str: 10
+        })
+      end
+    end
   end
 end
