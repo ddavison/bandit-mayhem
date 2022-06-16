@@ -30,7 +30,18 @@ module BanditMayhem
     end
 
     describe 'dialog' do
+      let(:npc) do
+        Npc.new(name: 'NPC', dialog: {
+                  'Hi there, how are you?': [
+                    'Good, thanks': "That's good",
+                    'Not great': "I'm sorry to hear that"
+                  ]
+                })
+      end
 
+      it 'works' do
+        player.interact_with(npc)
+      end
     end
 
     pending 'interactions'

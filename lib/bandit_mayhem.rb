@@ -18,7 +18,7 @@ module BanditMayhem
       attr_writer :map
 
       def player
-        @player ||= Player.new(name: 'Nigel', x: 1, y: 5, map:)
+        @player ||= Player.new(name: 'Nigel', health: 30, x: 1, y: 5, map:)
       end
 
       def map

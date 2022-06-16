@@ -60,6 +60,8 @@ module BanditMayhem
     TREE               = '∆'.light_green
     NPC                = '¶'.cyan
 
+    BED                = 'π'.light_blue
+
     SUN = '꥟'.yellow
 
     # Point of Interest
@@ -164,6 +166,15 @@ module BanditMayhem
       class Tree < Poi
         # Trees can contain items hidden within them
         attribute :items
+      end
+
+      # Bed
+      #
+      # @note interacting with the bed will fill the characters health to max
+      class Bed < Poi
+        def interact_with(character)
+          character.health = character.max_health
+        end
       end
     end
 
@@ -547,6 +558,8 @@ module BanditMayhem
 
       interiors.each do |interior|
         interior.pois.each do |poi|
+          require 'pry'
+          binding.pry
           @matrix[interior.y + poi.y][interior.x + poi.x] = poi.rune
         end
       end
@@ -582,12 +595,12 @@ module BanditMayhem
     #   Map.new('field').surface #=> ','
     def surface
       case type
-        when 'town'
-          SURFACE_STONE
-        when 'plains'
-          SURFACE_GRASS
-        else
-          SURFACE_DEFAULT
+      when 'town'
+        SURFACE_STONE
+      when 'grass'
+        SURFACE_GRASS
+      else
+        SURFACE_DEFAULT
       end
     end
   end
