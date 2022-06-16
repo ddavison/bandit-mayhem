@@ -31,8 +31,8 @@ pois:
     y: 0
     destination:
       map: lynwood/town_square
-      x: 5
-      y: 5
+      x: 3
+      y: 3
 
 interiors:
   - name: Guest room

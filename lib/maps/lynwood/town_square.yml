@@ -9,16 +9,13 @@ south: lynwood/plains
 interiors:
   - name: Strick Household
     x: 2
-    y: 2
+    y: 4
     width: 2
     height: 2
-    door:
-      x: 1
-      y: 1
     pois:
       - type: door
         x: 1
-        y: 1
+        y: 0
         destination:
           map: lynwood/strick_household
           x: 1
