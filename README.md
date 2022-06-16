@@ -24,7 +24,7 @@ Traverse through plains, towns and other areas collecting money, weapons and ite
 $ git clone https://github.com/ddavison/bandit-mayhem.git
 $ cd bandit-mayhem
 $ bundle install
-$ ruby game.rb
+$ bundle exec bin/bandit-mayhem
 ```
 
 ## How to play
