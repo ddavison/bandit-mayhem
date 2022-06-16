@@ -4,6 +4,8 @@ width: 50
 height: 20
 type: town
 
+south: lynwood/plains
+
 interiors:
   - name: Strick Household
     x: 2

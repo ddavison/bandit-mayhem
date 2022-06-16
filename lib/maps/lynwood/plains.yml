@@ -5,7 +5,7 @@ type: grass
 width: 70
 height: 15
 
-north: lynwood
+north: lynwood/town_square
 
 pois:
   -

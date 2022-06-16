@@ -3,10 +3,6 @@ name: Strick Household
 width: 5
 height: 5
 
-west: lynwood/plains
-east: lynwood/plains
-south: lynwood/plains
-
 npcs:
   - name: Gabbi Strick
     x: 1
