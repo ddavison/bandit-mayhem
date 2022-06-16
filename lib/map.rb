@@ -558,8 +558,6 @@ module BanditMayhem
 
       interiors.each do |interior|
         interior.pois.each do |poi|
-          require 'pry'
-          binding.pry
           @matrix[interior.y + poi.y][interior.x + poi.x] = poi.rune
         end
       end
