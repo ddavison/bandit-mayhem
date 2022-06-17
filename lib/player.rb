@@ -6,13 +6,7 @@ module BanditMayhem
   # Player
   class Player < Character
     # Get input from the player
-    def await_interaction(prompt = <<~PROMPT)
-      Health: #{health.to_s.red}/#{max_health.to_s.red}
-      Wallet: $#{gold.to_s.yellow}
-
-      Enter a command or move (#{'/help'.magenta} for options). (move: #{'w'.magenta}, #{'a'.magenta}, #{'s'.magenta}, #{'d'.magenta})
-    PROMPT
-
+    def await_interaction(prompt = '⋯'.magenta)
       puts prompt
 
       char = $stdin.getch
@@ -50,17 +44,24 @@ module BanditMayhem
       end
     end
 
-    # Player interacts with something on the map
-    def interact_with(what)
-      warn 'Teleporting through door' if what.is_a?(Map::Poi::Door)
+    def ui
+      <<~PROMPT
+        Health: #{health.to_s.red}/#{max_health.to_s.red}
+        Wallet: $#{gold.to_s.yellow}
 
-      warn 'Engaging in conversation' if what.is_a?(Npc)
+        Enter a command or move (#{'/help'.magenta} for options). (move: #{'w'.magenta}, #{'a'.magenta}, #{'s'.magenta}, #{'d'.magenta})
+      PROMPT
+    end
 
-      puts "You found #{what.value}" if what.is_a?(Map::Poi::Coinpurse)
+    def initialize(attrs)
+      super(attrs)
 
-      puts "You found an item #{what}" if what.is_a?(Map::Poi::Item)
+      save_game = Game.load_save
 
-      super
+      return unless save_game[:player]
+
+      merge_attributes save_game[:player] # load Player
+      merge_attributes map: save_game[:player][:map] # load map
     end
 
     def move(direction)

@@ -62,7 +62,7 @@ module BanditMayhem
         return {} unless File.exist?(DEFAULT_SAVE)
 
         save_file_contents = YAML.unsafe_load_file(DEFAULT_SAVE)
-        save_file_contents = {} unless save_file_contents # if game save file is empty
+        save_file_contents ||= {} # if game save file is empty
 
         raise GameSaveError, 'Invalid game save format.' unless save_file_contents.is_a?(Hash)
 
@@ -94,14 +94,23 @@ module BanditMayhem
       @quit
     end
 
+    def cls
+      if RUBY_PLATFORM =~ /win32|win64|\.NET|windows|cygwin|mingw32/i
+        system('cls')
+      else
+        system('clear')
+      end
+    end
+
     # Main game loop
     def update
-      # Utils.cls
+      cls
+
       Game.map.draw_map
 
       trap('SIGINT') { puts 'Goodbye!'; exit }
 
-      Game.player.await_interaction
+      Game.player.await_interaction(Game.player.ui)
     end
   end
 end

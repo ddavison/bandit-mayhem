@@ -3,37 +3,47 @@
 module BanditMayhem
   # Non-playable Character
   class Npc < Character
-    attribute :dialog
+    # Dialogs [Hash]
+    attribute :dialogs
 
+    # Player <-> NPC interaction
+    # Engage in conversation with the NPC
     def interact_with(player)
       return unless player.is_a? Player
 
       puts name.cyan
       puts avatar
 
-      dialog.each do |line, req|
-        req.each do |request, reply|
-          say(line)
+      dialogs.each do |request, reply|
+        npc_line = request
+        player_line = reply
 
-          request.keys.each do |l|
-            player.await_interaction(prompt(l)) do |response|
-              player.say(l)
+        say(npc_line)
 
-              say(request[l][response.to_i - 1])
-            end
+        if player_line.respond_to?(:each)
+          # multiple options for response
+
+          player_line.each_with_index do |line, i|
+            puts "#{(i + 1).to_s.light_magenta}) #{line.first}"
           end
+        end
 
-          puts reply
+        player.await_interaction(prompt) do |response|
+          if player_line.is_a?(String)
+            player.say(player_line)
+          else
+            player.say(player_line.keys[response.to_i - 1])
+
+            say(player_line[player_line.keys[response.to_i - 1]])
+          end
         end
       end
     end
 
     private
 
-    def prompt(line)
-      puts "#{'1'.light_magenta}) #{line}"
-
-      print 'Enter your response: '
+    def prompt
+      print '⋯'.magenta
     end
   end
 end

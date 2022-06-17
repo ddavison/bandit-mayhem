@@ -36,6 +36,8 @@ module BanditMayhem
 
     WALL_VERT          = '│'
     WALL_HORIZ         = '─'
+    WALL_VERT_BORDER   = '┇'
+    WALL_HORIZ_BORDER  = '┅'
     CORNER_UPPER_RIGHT = '┐'
     CORNER_UPPER_LEFT  = '┌'
     CORNER_LOWER_LEFT  = '└'
@@ -66,6 +68,8 @@ module BanditMayhem
     BED                = 'π'.light_blue
 
     SUN = '꥟'.yellow
+
+    BEACON = 'Å'
 
     # Point of Interest
     class Poi
@@ -133,10 +137,6 @@ module BanditMayhem
         # @param [Character] character
         def interact_with(character)
           character.warp(**destination) if unlocked?
-
-          return warn "Teleporting #{character} to #{destination}" if unlocked?
-
-          warn 'Cant teleport as the door is locked'
         end
       end
 
@@ -218,10 +218,13 @@ module BanditMayhem
     def initialize(name, **attrs)
       return name if name.is_a?(Map)
 
+      file = attrs.delete(:file)
+      skip_load = attrs.delete(:skip_load)
+
       self.file = name
 
-      merge_attributes load_attributes_from_map(name, attrs.delete(:file))
-      merge_attributes load_attributes_from_save(name)
+      merge_attributes load_attributes_from_map(name, file)
+      merge_attributes load_attributes_from_save(name) unless skip_load
       merge_attributes attrs
 
       load_pois
@@ -284,40 +287,32 @@ module BanditMayhem
       map
     end
 
-    # Return the map to the north. nil if none
+    # Get the map to the north
     #
     # @return [Map,nil]
-    def north
-      return unless @north
-
-      @north_map ||= Map.new(@north)
+    def north_map
+      Map.new(north) if north
     end
 
-    # Return the map to the south. nil if none
+    # Get the map to the south
     #
     # @return [Map,nil]
-    def south
-      return unless @south
-
-      @south_map ||= Map.new(@south)
+    def south_map
+      Map.new(south) if south
     end
 
-    # Return the map to the east. nil if none
+    # Get the map to the west
     #
     # @return [Map,nil]
-    def east
-      return unless @east
-
-      @east_map ||= Map.new(@east)
+    def west_map
+      Map.new(west) if west
     end
 
-    # Return the map to the west. nil if none
+    # Get the map to the east
     #
     # @return [Map,nil]
-    def west
-      return unless @west
-
-      @west_map ||= Map.new(@west)
+    def east_map
+      Map.new(east) if east
     end
 
     # draw the @render
@@ -380,7 +375,7 @@ module BanditMayhem
     # @return [Map::Interior,nil] the interior if found. nil if not
     def interior_at(x:, y:)
       interiors.each do |interior|
-        intercept = [(interior.x..interior.x + interior.width), (interior.y..interior.y + interior.height)]
+        intercept = [(interior.x..interior.x + interior.width + 1), (interior.y..interior.y + interior.height + 1)]
 
         return interior if intercept[0].include?(x) && intercept[1].include?(y)
       end
@@ -518,16 +513,34 @@ module BanditMayhem
 
     # Draw the walls of the map
     def draw_boundary_walls
-      # top / bottom walls
+      # north / south walls
       (1..width).each do |x|
-        @matrix[0][x] = WALL_HORIZ
-        @matrix[-1][x] = WALL_HORIZ
+        @matrix[0][x]  = if north
+                           WALL_HORIZ_BORDER
+                         else
+                           WALL_HORIZ
+                         end
+
+        @matrix[-1][x] = if south
+                           WALL_HORIZ_BORDER
+                         else
+                           WALL_HORIZ
+                         end
       end
 
-      # left / right walls
+      # west / east walls
       (1..height).each do |y|
-        @matrix[y][0] = WALL_VERT
-        @matrix[y][-1] = WALL_VERT
+        @matrix[y][0] = if west
+                          WALL_VERT_BORDER
+                        else
+                          WALL_VERT
+                        end
+
+        @matrix[y][-1] = if east
+                           WALL_VERT_BORDER
+                         else
+                           WALL_VERT
+                         end
       end
     end
 
@@ -637,6 +650,8 @@ module BanditMayhem
         SURFACE_STONE
       when 'grass'
         SURFACE_GRASS
+      when 'interior'
+        SURFACE_MARBLE
       else
         SURFACE_DEFAULT
       end

@@ -17,15 +17,3 @@ pois:
     x: 10
     y: 8
     value: 15
-#  -
-#    type: weapon
-#    item: Sword
-#    x: 5
-#    y: 2
-#    consumable: true
-#  -
-#    type: bandit
-#    x: 2
-#    y: 2
-#    consumable:
-#      unless: ran_away

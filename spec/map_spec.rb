@@ -123,6 +123,34 @@ module BanditMayhem
           expect(map.interior_at(x: 1, y: 1)).to be_nil
         end
       end
+
+      context 'when referring to the borders of the interior' do
+        let(:qasmoke) { map.interiors.first }
+
+        it 'returns true when coordinate is a border', :aggregate_failures do
+          (qasmoke.y..qasmoke.height).each do |y|
+            (qasmoke.x..qasmoke.width).each do |x|
+              expect(map.interior_at(x:, y:)).to eq(qasmoke)
+            end
+          end
+        end
+      end
+
+      context 'when referring to 1 coordinate outside of the interior' do
+        it 'returns false', :aggregate_failures do
+          # check top
+          expect(map.interior_at(x: 7, y: 2)).to be_nil
+
+          # check bottom
+          expect(map.interior_at(x: 7, y: 8)).to be_nil
+
+          # check right
+          expect(map.interior_at(x: 11, y: 5)).to be_nil
+
+          # check left
+          expect(map.interior_at(x: 4, y: 8)).to be_nil
+        end
+      end
     end
 
     describe '#initialize' do
@@ -289,7 +317,36 @@ module BanditMayhem
 
     describe 'borders' do
       subject(:map) do
-        described_class.new('with borders', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'with_borders.yml')))
+        described_class.new('with borders', width: 5, height: 5, file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'with_borders.yml')))
+      end
+
+      before do
+        map.generate
+        map.render
+      end
+
+      describe 'bordered walls' do
+        it 'renders horizontal northern walls', :aggregate_failures do
+          map.matrix.first[1..map.width].each do |char|
+            expect(char).to eq(described_class::WALL_HORIZ_BORDER)
+          end
+        end
+
+        it 'renders horizontal southern walls', :aggregate_failures do
+          map.matrix.last[1..map.width].each do |char|
+            expect(char).to eq(described_class::WALL_HORIZ_BORDER)
+          end
+        end
+
+        it 'renders vertical western and eastern walls', :aggregate_failures do
+          map.matrix[1..map.width].each do |row|
+            # west
+            expect(row.first).to eq(described_class::WALL_VERT_BORDER)
+
+            # east
+            expect(row.last).to eq(described_class::WALL_VERT_BORDER)
+          end
+        end
       end
 
       describe '#north' do

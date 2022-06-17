@@ -18,8 +18,8 @@ module BanditMayhem
     # The avatar which to print (ASCII art)
     attribute :avatar
 
-    # The faction to which this character belongs
-    attribute :faction
+    # The factions to which this character belongs
+    attribute :factions, []
 
     # What map this character belongs to
     attribute :map
@@ -45,14 +45,7 @@ module BanditMayhem
     # @option attrs [String] :x the X coordinate on the map where the character is located
     # @option attrs [String] :y the Y coordinate on the map where the character is located
     def initialize(attrs)
-      save_game = Game.load_save
-
       merge_attributes attrs
-
-      return unless save_game[:player]
-
-      merge_attributes save_game[:player] # load Player
-      merge_attributes map: save_game[:player][:map] # load map
     end
 
     # Is the character deceased?
@@ -227,6 +220,8 @@ module BanditMayhem
     # @param [String] message what to say
     def say(message)
       puts "#{name.cyan}: #{message}"
+
+      Game.player.await_interaction
     end
 
     # Warp somewhere
@@ -254,6 +249,19 @@ module BanditMayhem
       name
     end
 
+    protected
+
+    # Perform some actions under some context
+    #
+    # @param [String] context
+    def context(context, &block)
+      puts context.italic.light_cyan
+
+      Game.player.await_interaction
+
+      block.call
+    end
+
     private
 
     # Move the character in a specific direction
@@ -270,7 +278,7 @@ module BanditMayhem
 
         if y == 1 && !is_door
           if map.north
-            self.map = map.north
+            self.map = map.north_map
 
             self.y = map.height
           else
@@ -286,7 +294,7 @@ module BanditMayhem
 
         if y == map.height && !is_door
           if map.south
-            self.map = map.south
+            self.map = map.south_map
 
             self.y = 1
           else
@@ -302,7 +310,7 @@ module BanditMayhem
 
         if x == 1 && !is_door
           if map.west
-            self.map = map.west
+            self.map = map.west_map
 
             self.x = map.width
           else
@@ -318,7 +326,7 @@ module BanditMayhem
 
         if x == map.width && !is_door
           if map.east
-            self.map = map.east
+            self.map = map.east_map
 
             self.x = 1
           else

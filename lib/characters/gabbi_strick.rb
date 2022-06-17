@@ -2,7 +2,7 @@
 
 module BanditMayhem
   module Characters
-    # Gabbi Strick
+    # Gabbi Strick (brief lore here)
     class GabbiStrick < Npc
       attribute :avatar, <<-AVATAR
                         ___
@@ -33,7 +33,7 @@ module BanditMayhem
       AVATAR
 
       def interact_with(player)
-        super
+        super # start dialog
 
         if player.items.has_a?(Items::Baton) && player.gold >= 10
           # player has all the items necessary. Continue

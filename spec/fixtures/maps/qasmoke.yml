@@ -2,6 +2,7 @@
 name: QA Smoke
 width: 50
 height: 10
+type: interior
 
 pois:
   - type: door

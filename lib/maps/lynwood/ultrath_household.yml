@@ -1,0 +1,22 @@
+---
+name: Ultrath Household
+width: 5
+height: 5
+type: interior
+
+npcs:
+  - name: Tristo Ultrath
+    x: 2
+    y: 5
+    dialogs:
+      What the hell are you doing in my home? Get out now!:
+        My apologies, I'll be leaving now.: Good.
+
+pois:
+  - type: door
+    x: 2
+    y: 6
+    destination:
+      map: lynwood/town_square
+      y: 4
+      x: 3
