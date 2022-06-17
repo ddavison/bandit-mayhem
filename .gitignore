@@ -1,5 +1,9 @@
 editor/app
 map
+
+# game saves
+*.save
+
 # Created by http://www.gitignore.io
 
 ### Intellij ###

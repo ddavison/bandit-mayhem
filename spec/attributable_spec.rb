@@ -41,5 +41,12 @@ module BanditMayhem
         })
       end
     end
+
+    describe '#[]' do
+      it 'returns an attribute', :aggregate_failures do
+        expect(attributed_class[:health]).to eq(100)
+        expect(attributed_class[:str]).to eq(10)
+      end
+    end
   end
 end

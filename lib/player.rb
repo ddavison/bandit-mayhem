@@ -16,6 +16,7 @@ module BanditMayhem
       puts prompt
 
       char = $stdin.getch
+      # char = 'w'
 
       return yield char if block_given?
 
@@ -27,6 +28,7 @@ module BanditMayhem
         puts command
 
         exit if /q|quit|exit/.match?(command)
+        Game.save if /save/.match?(command)
 
         # TODO: refactor later
         if command.start_with? 'warp'
@@ -48,6 +50,7 @@ module BanditMayhem
       end
     end
 
+    # Player interacts with something on the map
     def interact_with(what)
       warn 'Teleporting through door' if what.is_a?(Map::Poi::Door)
 
@@ -63,8 +66,12 @@ module BanditMayhem
     def move(direction)
       super(direction)
 
-      # change map
-      Game.map = map unless Game.map == map
+
+      return if Game.map == map
+
+      # autosave & change the map
+      Game.save
+      Game.map = map
     end
 
     # Player name

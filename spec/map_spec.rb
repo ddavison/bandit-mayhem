@@ -33,6 +33,7 @@ module BanditMayhem
     describe '#at' do
       before do
         map.generate
+        puts map.render
       end
 
       it 'returns the door at 1,1 in qasmoke', :aggregate_failures do
@@ -45,9 +46,45 @@ module BanditMayhem
       end
 
       context 'when point is intersecting an interior' do
-        xit 'returns a poi in the context of that interior' do
+        it 'returns a poi in the context of that interior' do
           expect(map.at(x: 9, y: 6)).to be_a(Map::Poi::Coinpurse)
         end
+      end
+    end
+
+    describe '#remove_at' do
+      before do
+        map.generate
+      end
+
+      it 'removes an entity at a coordinate', :aggregate_failures do
+        expect(map.at(x: 2, y: 1)).to be_a(Map::Poi::Coinpurse)
+
+        map.remove_at(x: 2, y: 1)
+
+        expect(map.at(x: 2, y: 1)).to be_nil
+      end
+
+      it 'returns true when it was removed' do
+        expect(map.remove_at(x: 2, y: 1)).to eq(true)
+      end
+
+      it 'returns false when nothing was removed' do
+        expect(map.remove_at(x: 9, y: 9)).to eq(false)
+      end
+    end
+
+    describe '#remove' do
+      before do
+        map.generate
+      end
+
+      it 'removes a poi from the map', :aggregate_failures do
+        expect(map.at(x: 2, y: 1)).to be_a(Map::Poi::Coinpurse)
+
+        map.remove(map.at(x: 2, y: 1))
+
+        expect(map.at(x: 2, y: 1)).to be_nil
       end
     end
 

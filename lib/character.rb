@@ -8,9 +8,6 @@ module BanditMayhem
     include Attributable
     include Interactable
 
-    attr_accessor :weapon,
-                  :location
-
     attribute :name, 'Somebody'
     attribute :health, 100
     attribute :max_health, 100
@@ -48,7 +45,14 @@ module BanditMayhem
     # @option attrs [String] :x the X coordinate on the map where the character is located
     # @option attrs [String] :y the Y coordinate on the map where the character is located
     def initialize(attrs)
-      merge_attributes(attrs)
+      save_game = Game.load_save
+
+      merge_attributes attrs
+
+      return unless save_game[:player]
+
+      merge_attributes save_game[:player] # load Player
+      merge_attributes map: save_game[:player][:map] # load map
     end
 
     # Is the character deceased?
@@ -237,6 +241,12 @@ module BanditMayhem
       self.y = y
 
       interact_with(self.map.at(x:, y:))
+    end
+
+    def interact_with(what)
+      super
+
+      map.remove(what) if what.is_a?(Map::Poi)
     end
 
     # Character's name

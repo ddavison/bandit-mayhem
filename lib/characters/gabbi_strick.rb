@@ -4,22 +4,22 @@ module BanditMayhem
   module Characters
     # Gabbi Strick
     class GabbiStrick < Npc
-      attribute :avatar, <<~AVATAR
+      attribute :avatar, <<-AVATAR
                         ___
                        ////
                      @@@@/
           . - .     @,, @@@
-        . \ |./ .  @(<  ?@@@
-        .__\|/__. @@ ~  /@@@
+        . \\ |./ .  @(<  ?@@@
+        .__\\|/__. @@ ~  /@@@
            |//   __@_:::_@@@
-           -\ ) (((  ~  ((())
-            : \/=(((((((((\=\
-            |_*\/ ###X#### \=\
-             \./  ###x###   \_\_
+           -\\ ) (((  ~  ((())
+            : \\/=(((((((((\\=\\
+            |_*\\/ ###X#### \\=\\
+             \\./  ###x###   \\_\\_
                   ######    | */
                  #((()))#   :_/
-                #(((())))#  | \
-               (##((())))## '\)
+                #(((())))#  | \\
+               (##((())))## '\\)
                (##((()))###)
                ((##(()))###)
                 ((##(()##))))
@@ -28,8 +28,8 @@ module BanditMayhem
                 ((((((###))))))
                  (((((####)))))
                  #*#*#*#*#*#*#*
-                   /.)     (.\
-                 _//(       )\\_
+                   /.)     (.\\
+                 _//(       )\\\\_
       AVATAR
 
       def interact_with(player)
@@ -38,7 +38,15 @@ module BanditMayhem
         if player.items.has_a?(Items::Baton) && player.gold >= 10
           # player has all the items necessary. Continue
 
-          say 'Good luck out there! (ideally some dialog here, to fill in lore.)'
+          if player.health != player.max_health
+            say "You should rest in the bed (#{Map::BED}) before you go, you're still weak."
+
+            player.y += 1
+          else
+            say 'Good luck out there!'
+
+            self.x = 5 # Gabbi moves from the doorway
+          end
         else
           say 'You shouldnt leave here without your items!'
           player.y += 1 # move player back away from Gabbi

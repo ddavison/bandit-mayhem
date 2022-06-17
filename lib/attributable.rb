@@ -56,6 +56,8 @@ module BanditMayhem
         # Merge new attributes into existing attributes or create new attributes
         # @param [Hash] new_attributes the new attributes to merge
         def merge_attributes(new_attributes)
+          new_attributes = new_attributes.current_attributes if new_attributes.is_a?(Attributable)
+
           new_attributes.deep_symbolize_keys!
 
           raise AttributeError, 'No attributes exist. Have you defined any for this class?' if attributes.nil?
@@ -71,6 +73,11 @@ module BanditMayhem
           end
 
           warn "skipping attribute(s) `#{extraneous_attrs.join(',')}` for #{self.class} as it is/they are not specified for this class." if extraneous_attrs.any?
+        end
+
+        # Return an attribute by means of a symbol index
+        def [](attr)
+          public_send(attr)
         end
       end
     end

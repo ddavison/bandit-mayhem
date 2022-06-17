@@ -15,6 +15,9 @@ module BanditMayhem
     attribute :width
     attribute :height
 
+    # The containing map file
+    attribute :file
+
     # Points of Interests
     attribute :pois, []
 
@@ -213,7 +216,12 @@ module BanditMayhem
     #   @param [Hash] attrs all additional attributes to load into the map
     #   @note use :file to load a specific map file
     def initialize(name, **attrs)
+      return name if name.is_a?(Map)
+
+      self.file = name
+
       merge_attributes load_attributes_from_map(name, attrs.delete(:file))
+      merge_attributes load_attributes_from_save(name)
       merge_attributes attrs
 
       load_pois
@@ -358,10 +366,10 @@ module BanditMayhem
 
       return unless interior
 
-      # try to get the poi from inside an interior
+      # get the poi from inside an interior
       interior.pois.select do |point|
-        point.x == (x / 2 - interior.width) &&
-          point.y == (y - interior.height)
+        point.x == x - interior.width - (interior.x - interior.width) &&
+          point.y == y - interior.height - (interior.y - interior.height)
       end.first
     end
 
@@ -378,6 +386,33 @@ module BanditMayhem
       end
 
       nil
+    end
+
+    # Remove an entity at a specific coordinate
+    #
+    # @param [Integer] x the X coordinate
+    # @param [Integer] y the Y coordinate
+    # @return [Boolean] true if at least one entity was removed
+    def remove_at(x:, y:)
+      return false unless at(x:, y:)
+
+      entities = pois.select { _1.x == x && _1.y == y }.each do |poi|
+        pois.delete(poi)
+
+        @matrix[y][x] = surface
+      end
+
+      entities.any? ? true : false
+    end
+
+    # Remove a POI
+    #
+    # @param [Poi] poi the Point of interest to remove from the map
+    # @return [Boolean] true if this poi was removed
+    def remove(poi)
+      return false unless pois.include?(poi)
+
+      remove_at(x: poi.x, y: poi.y)
     end
 
     # Get a character from the map's matrix if exists
@@ -401,10 +436,10 @@ module BanditMayhem
     # Load map data from a YAML file
     #
     # @overload load_attributes_from_map(name)
-    #   @param [String] the name of the map file (without yaml suffix)
+    #   @param [String] name the name of the map file (without yaml suffix)
     # @overload load_attributes_from_map(name, file)
-    #   @param [String] the name of the map file (without yaml suffix)
-    #   @param [String] the explicit map file to load
+    #   @param [String] name the name of the map file (without yaml suffix)
+    #   @param [String] file the explicit map file to load
     def load_attributes_from_map(name, file = nil)
       map_file = file || File.expand_path(File.join('lib', 'maps', "#{name}.yml"))
       return {} unless File.exist?(map_file)
@@ -415,6 +450,19 @@ module BanditMayhem
       raise MapError, 'Invalid map format' unless map.is_a? Hash
 
       map
+    end
+
+    # The save files contain a maps key which contains the name
+    #
+    # @param [String] name
+    def load_attributes_from_save(name)
+      save_game = Game.load_save
+
+      map = save_game[:maps][name] if save_game[:maps]
+
+      return {} unless map
+
+      map.current_attributes
     end
 
     # Take map pois and convert in-place to their respective data structure
@@ -448,6 +496,8 @@ module BanditMayhem
     # Load NPCs into the map
     def load_npcs
       npcs.each_with_index do |npc, i|
+        next npcs[i] = npc if npc.is_a?(Npc)
+
         npcs[i] = begin
                     Characters.const_get(npc[:name].underscore.classify).new(npc)
                   rescue NameError
@@ -573,16 +623,6 @@ module BanditMayhem
     # Draw the player on the map
     def draw_player
       @matrix[Game.player.y][Game.player.x] = PLAYER
-    end
-
-    def remove_entity(*args)
-      if args[0].is_a? Hash
-        poi.each do |poi|
-          if poi['x'] == args[0][:x] && poi['y'] == args[0][:y]
-            poi.delete(poi)
-          end
-        end
-      end
     end
 
     # The surface of the map that the player walks on
