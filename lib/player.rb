@@ -44,6 +44,12 @@ module BanditMayhem
       end
     end
 
+    def interact_with(what)
+      context 'This bed looks comfy', await: false if what.is_a?(Map::Poi::Bed)
+
+      super(what)
+    end
+
     def ui
       <<~PROMPT
         Health: #{health.to_s.red}/#{max_health.to_s.red}

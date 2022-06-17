@@ -14,10 +14,15 @@ module BanditMayhem
       merge_attributes attrs
     end
 
-    def interact_with(what)
+    # Interaction with item
+    #
+    # @param [Character] character
+    def interact_with(character)
       super
 
-      what.items << self if what.respond_to?(:items)
+      context "#{character.name} has found a #{name}" do
+        character.items << self
+      end
     end
   end
 end

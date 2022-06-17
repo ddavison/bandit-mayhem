@@ -241,25 +241,12 @@ module BanditMayhem
     def interact_with(what)
       super
 
-      map.remove(what) if what.is_a?(Map::Poi)
+      map.remove(what) if what.is_a?(Consumable)
     end
 
     # Character's name
     def to_s
       name
-    end
-
-    protected
-
-    # Perform some actions under some context
-    #
-    # @param [String] context
-    def context(context, &block)
-      puts context.italic.light_cyan
-
-      Game.player.await_interaction
-
-      block.call
     end
 
     private

@@ -142,11 +142,15 @@ module BanditMayhem
 
       # Map Coinpurse
       class Coinpurse < Poi
+        include Consumable
+
         attribute :value
 
         # Add gold to the character's wallet
         def interact_with(what)
-          what.gold += value if what.respond_to?(:gold)
+          context "#{what.name} has found a coinpurse ($#{value.to_s.yellow})" do
+            what.gold += value if what.respond_to?(:gold)
+          end
         end
       end
 
@@ -157,18 +161,37 @@ module BanditMayhem
 
       # Map Item
       class Item < Poi
+        include Consumable
+
         attribute :description
 
         # Add item to inventory
         def interact_with(what)
-          what.items << Items.const_get(name.underscore.classify).new(current_attributes) if what.respond_to?(:items)
+          item = Items.const_get(name.underscore.classify).new(current_attributes)
+
+          context "#{what.name.bold} has found a #{item.name.bold}", await: false do
+            what.items << item
+          end
         end
       end
 
       # Map Tree
       class Tree < Poi
         # Trees can contain items hidden within them
-        attribute :items
+        attribute :items, []
+
+        # Player collides with tree
+        #
+        # @param [Player] player
+        def interact_with(player)
+          return unless player.is_a? Player
+
+          return unless items.any?
+
+          context 'You found some items!' do
+            items.each { player.items << _1 }
+          end
+        end
       end
 
       # Bed
@@ -176,7 +199,9 @@ module BanditMayhem
       # @note interacting with the bed will fill the characters health to max
       class Bed < Poi
         def interact_with(character)
-          character.health = character.max_health
+          context "#{character.name.cyan}'s health has been filled", await: false do
+            character.health = character.max_health
+          end
         end
       end
     end
