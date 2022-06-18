@@ -4,7 +4,7 @@ module BanditMayhem
   module Characters
     # Gabbi Strick (brief lore here)
     class GabbiStrick < Npc
-      attribute :avatar, <<-AVATAR
+      attribute :avatar, <<~AVATAR
                         ___
                        ////
                      @@@@/
@@ -49,7 +49,7 @@ module BanditMayhem
           end
         else
           say 'You shouldnt leave here without your items!'
-          player.y += 1 # move player back away from Gabbi
+          player.down # move player back away from Gabbi
         end
       end
     end

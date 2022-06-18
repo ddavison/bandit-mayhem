@@ -27,6 +27,9 @@ module BanditMayhem
     attribute :type
     attribute :interiors, []
 
+    # Drawn paths
+    attribute :paths, []
+
     attribute :north
     attribute :south
     attribute :east
@@ -49,6 +52,8 @@ module BanditMayhem
     INTERIOR_CORNER_UPPER_LEFT  = '╔'
     INTERIOR_CORNER_LOWER_LEFT  = '╚'
     INTERIOR_CORNER_LOWER_RIGHT = '╝'
+
+    PATH               = '▓'.light_black
 
     DOOR               = '¤'.magenta
     CAVE               = 'O'.magenta
@@ -283,6 +288,7 @@ module BanditMayhem
       draw_boundary_corners
       draw_boundary_walls
       draw_surface
+      draw_paths
 
       draw_interiors
 
@@ -576,6 +582,17 @@ module BanditMayhem
       (1..height).each do |y|
         (1..width).each do |x|
           @matrix[y][x] = surface
+        end
+      end
+    end
+
+    # Draw paths on the map
+    def draw_paths
+      paths.each do |path|
+        (path[:from][:y]..path[:to][:y]).each do |y|
+          (path[:from][:x]..path[:to][:x]).each do |x|
+            @matrix[y][x] = PATH
+          end
         end
       end
     end

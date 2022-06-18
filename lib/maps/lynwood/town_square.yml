@@ -34,3 +34,28 @@ interiors:
           map: lynwood/ultrath_household
           x: 2
           y: 5
+
+paths:
+  # Residential
+  - from:
+      x: 0
+      y: 4
+    to:
+      x: 25
+      y: 4
+
+  # Arterial
+  - from:
+      x: 25
+      y: 4
+    to:
+      x: 26
+      y: 16
+
+  # to Lynwood Compound
+  - from:
+      x: 26
+      y: 11
+    to:
+      x: 50
+      y: 11
