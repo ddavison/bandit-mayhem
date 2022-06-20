@@ -17,3 +17,11 @@ pois:
     x: 10
     y: 8
     value: 15
+
+paths:
+  - from:
+      x: 25
+      y: 0
+    to:
+      x: 26
+      y: 16

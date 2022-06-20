@@ -1,0 +1,13 @@
+---
+name: Lynwood Barracks
+width: 10
+height: 10
+
+pois:
+  - type: door
+    x: 0
+    y: 5
+    destination:
+      map: lynwood/town_square
+      x: 27
+      y: 4
