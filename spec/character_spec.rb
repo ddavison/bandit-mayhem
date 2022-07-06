@@ -171,22 +171,22 @@ module BanditMayhem
 
         it 'moves north' do
           character.up
-          expect(character.map).to eq(map.north)
+          expect(character.map).to eq(map.north_map)
         end
 
         it 'moves south' do
           character.down
-          expect(character.map).to eq(map.south)
+          expect(character.map).to eq(map.south_map)
         end
 
         it 'moves west' do
           character.left
-          expect(character.map).to eq(map.west)
+          expect(character.map).to eq(map.west_map)
         end
 
         it 'moves east' do
           character.right
-          expect(character.map).to eq(map.east)
+          expect(character.map).to eq(map.east_map)
         end
       end
 
@@ -229,10 +229,10 @@ module BanditMayhem
       describe 'when there is a door at the boundary' do
         let(:map) do
           Map.new('all doors', width: 1, height: 1, pois: [
-                    { type: 'door', x: 1, y: 0 }, # north
-                    { type: 'door', x: 1, y: 2 }, # south
-                    { type: 'door', x: 0, y: 1 }, # west
-                    { type: 'door', x: 2, y: 1 }  # east
+                    { type: 'door', x: 1, y: 0, destination: { map: '../../spec/fixtures/maps/qasmoke', x: 9, y: 1 } }, # north
+                    { type: 'door', x: 1, y: 2, destination: { map: '../../spec/fixtures/maps/qasmoke', x: 9, y: 2 } }, # south
+                    { type: 'door', x: 0, y: 1, destination: { map: '../../spec/fixtures/maps/qasmoke', x: 9, y: 3 } }, # west
+                    { type: 'door', x: 2, y: 1, destination: { map: '../../spec/fixtures/maps/qasmoke', x: 9, y: 4 } }  # east
                   ])
         end
 
@@ -245,7 +245,7 @@ module BanditMayhem
         it '#up allows the character to move into the location of the door' do
           character.up
 
-          expect(character.y).to eq(0)
+          expect(character.y).to eq(1)
         end
 
         it '#down allows the character to move into the location of the door' do
@@ -257,13 +257,13 @@ module BanditMayhem
         it '#left allows the character to move into the location of the door' do
           character.left
 
-          expect(character.x).to eq(0)
+          expect(character.y).to eq(3)
         end
 
         it '#right allows the character to move into the location of the door' do
           character.right
 
-          expect(character.x).to eq(2)
+          expect(character.y).to eq(4)
         end
       end
 
@@ -320,7 +320,7 @@ module BanditMayhem
       let(:map) do
         Map.new('interactions', width: 3, height: 3, pois: [
                   { type: 'door', x: 2, y: 1, destination: { x: 9, y: 9 } }, # .north
-                  { type: 'item', x: 3, y: 2 }, # .east
+                  { type: 'item', name: 'baton', x: 3, y: 2 }, # .east
                   { type: 'shop', x: 1, y: 2 }  # .west
                 ], npcs: [
                   { name: 'test', x: 2, y: 3 }  # .south
@@ -366,6 +366,10 @@ module BanditMayhem
     end
 
     describe '#say' do
+      before do
+        allow(Game.player).to receive(:await_interaction).and_return(nil)
+      end
+
       it 'says something' do
         expect { character.say('hi') }.to output(/#{character.name}/).to_stdout
         expect { character.say('hi') }.to output(/hi/).to_stdout
@@ -381,7 +385,7 @@ module BanditMayhem
         it 'warps between maps' do
           expect(character.map).to eq(map)
 
-          character.warp(map: blank_map.name)
+          character.warp(map: blank_map)
           expect(character.map).to eq(blank_map)
         end
 

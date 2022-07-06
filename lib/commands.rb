@@ -1,40 +1,37 @@
 # frozen_string_literal: true
 
-require 'colorize'
-require 'yaml'
-
 module BanditMayhem
-  class Commands
-    @descriptions = []
+  # yes
+  module Commands
+    extend self
 
-    # list the help menu.
-    def help(args)
-      @descriptions.each do |cmd, description|
-        puts "\t#{cmd}".magenta + ': ' + "#{description}".light_magenta
-      end
+    # Help menu
+    def help(args = nil); end
+
+    # Quit the game
+    #
+    # @note this does not save the game
+    def quit
+      Kernel.exit
+    end
+    alias q quit
+    alias exit quit
+
+    # Warp the character to a coordinate
+    #
+    # @param [String] x the X coordinate
+    # @param [String] y the Y coorinate
+    # @note this is a CHEAT
+    def warp(x, y)
+      # TODO add sanitization
+      Game.player.warp(x: x.to_i, y: y.to_i)
     end
 
-    # this subroutine will decide what to do with cmd
-    def execute(cmd)
-      if cmd.include? '/'
-        cmd.downcase!
+    # Save the game
+    def save
+      Game.save
 
-        full_cmd = cmd.gsub(/\//, '')
-        command_name = full_cmd.split(' ').first # the actual command name.
-        params = full_cmd.split(' ') # the parameters passed to the command.
-        params.shift
-
-        begin
-          send("#{command_name}", params)
-        rescue NoMethodError => e
-          puts "unknown command [#{command_name}]".red
-          $stderr.puts e
-        rescue TypeError, Exception
-          puts "you have an issue in your code for [#{command_name}]".red
-        end
-      else
-        puts 'type /help for help'.green
-      end
+      puts 'Game saved.'.magenta
     end
   end
 end

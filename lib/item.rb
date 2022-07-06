@@ -24,5 +24,9 @@ module BanditMayhem
         character.items << self
       end
     end
+
+    def to_s
+      name
+    end
   end
 end

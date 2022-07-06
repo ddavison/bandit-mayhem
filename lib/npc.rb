@@ -28,7 +28,7 @@ module BanditMayhem
           end
         end
 
-        player.await_interaction(prompt) do |response|
+        player.await_interaction do |response|
           if player_line.is_a?(String)
             player.say(player_line)
           else
@@ -38,12 +38,6 @@ module BanditMayhem
           end
         end
       end
-    end
-
-    private
-
-    def prompt
-      print '⋯'.magenta
     end
   end
 end

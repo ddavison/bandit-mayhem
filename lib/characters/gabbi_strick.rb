@@ -41,7 +41,7 @@ module BanditMayhem
           if player.health != player.max_health
             say "You should rest in the bed (#{Map::BED}) before you go, you're still weak."
 
-            player.y += 1
+            player.down
           else
             say 'Good luck out there!'
 

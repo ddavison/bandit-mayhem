@@ -13,7 +13,10 @@ module BanditMayhem
     def context(context, await: true)
       puts context.light_black.italic
 
-      Game.player.await_interaction if await
+      if await
+        Game.player.await_interaction do |_|
+        end
+      end
 
       yield if block_given?
     end

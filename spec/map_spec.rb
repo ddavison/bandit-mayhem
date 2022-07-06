@@ -4,7 +4,7 @@ require 'spec_helper'
 
 module BanditMayhem
   RSpec.describe Map do
-    let(:player) { Player.new(name: 'test player') }
+    let(:player) { Character.new(name: 'test player') }
 
     subject(:map) do
       Map.new('qasmoke', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml')))
@@ -149,6 +149,20 @@ module BanditMayhem
 
           # check left
           expect(map.interior_at(x: 4, y: 8)).to be_nil
+        end
+      end
+    end
+
+    describe '#interior_by_name' do
+      context 'when referring to a valid interior' do
+        it 'returns the Test Room interior' do
+          expect(map.interior_by_name('Test Room')).to eq(map.interiors.first)
+        end
+      end
+
+      context 'when not referring to a valid interior' do
+        it 'returns nil' do
+          expect(map.interior_by_name('invalid interior')).to be_nil
         end
       end
     end
@@ -349,31 +363,31 @@ module BanditMayhem
         end
       end
 
-      describe '#north' do
+      describe '#north_map' do
         it 'returns the map to the north' do
-          expect(map.north).to be_a(Map)
-          expect(map.north.name).to eq('north_map')
+          expect(map.north_map).to be_a(Map)
+          expect(map.north_map.name).to eq('north_map')
         end
       end
 
-      describe '#south' do
+      describe '#south_map' do
         it 'returns the map to the south' do
-          expect(map.south).to be_a(Map)
-          expect(map.south.name).to eq('south_map')
+          expect(map.south_map).to be_a(Map)
+          expect(map.south_map.name).to eq('south_map')
         end
       end
 
-      describe '#west' do
+      describe '#west_map' do
         it 'returns the map to the west' do
-          expect(map.west).to be_a(Map)
-          expect(map.west.name).to eq('west_map')
+          expect(map.west_map).to be_a(Map)
+          expect(map.west_map.name).to eq('west_map')
         end
       end
 
-      describe '#east' do
+      describe '#east_map' do
         it 'returns the map to the east' do
-          expect(map.east).to be_a(Map)
-          expect(map.east.name).to eq('east_map')
+          expect(map.east_map).to be_a(Map)
+          expect(map.east_map.name).to eq('east_map')
         end
       end
     end

@@ -230,7 +230,11 @@ module BanditMayhem
     # @param [Integer] x the X coordinate
     # @param [Integer] y the Y coordinate
     def warp(x: self.x, y: self.y, map: self.map)
-      self.map = Map.new(map)
+      self.map = if map.is_a?(Map)
+                   map
+                 else
+                   Map.new(map)
+                 end
 
       self.x = x
       self.y = y

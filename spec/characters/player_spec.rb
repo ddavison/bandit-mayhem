@@ -39,9 +39,7 @@ module BanditMayhem
                 })
       end
 
-      it 'works' do
-        player.interact_with(npc)
-      end
+      pending 'works'
     end
 
     pending 'interactions'

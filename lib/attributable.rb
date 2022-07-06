@@ -72,7 +72,7 @@ module BanditMayhem
             end
           end
 
-          warn "skipping attribute(s) `#{extraneous_attrs.join(',')}` for #{self.class} as it is/they are not specified for this class." if extraneous_attrs.any?
+          warn "skipping attribute(s) `#{extraneous_attrs.join(',')}` for #{self.class} as they are not specified for this class." if extraneous_attrs.any?
         end
 
         # Return an attribute by means of a symbol index

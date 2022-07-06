@@ -21,14 +21,14 @@ module BanditMayhem
         command = gets
         puts command
 
-        exit if /q|quit|exit/.match?(command)
-        Game.save if /save/.match?(command)
+        command, *args = command.split(' ')
 
-        # TODO: refactor later
-        if command.start_with? 'warp'
-          _, x, y = command.split(' ')
+        return puts "Unknown command #{command}" unless BanditMayhem::Commands.respond_to?(command)
 
-          warp(x: x.to_i, y: y.to_i)
+        begin
+          BanditMayhem::Commands.public_send(command, *args)
+        rescue ArgumentError => e
+          warn e.message.red
         end
       when 'w'
         up
@@ -72,7 +72,6 @@ module BanditMayhem
 
     def move(direction)
       super(direction)
-
 
       return if Game.map == map
 

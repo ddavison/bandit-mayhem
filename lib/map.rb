@@ -135,7 +135,26 @@ module BanditMayhem
         #
         # @return [Boolean] true if unlocked
         def unlocked?
-          true
+          !locked?
+        end
+
+        # Is this door locked?
+        #
+        # @return [Boolean] true if locked
+        def locked?
+          @locked
+        end
+
+        def lock
+          @locked = true
+        end
+
+        def unlock
+          @locked = false
+        end
+
+        def rune
+          unlocked? ? DOOR : '¤'.light_red
         end
 
         # Traverse through the door
@@ -414,6 +433,14 @@ module BanditMayhem
       nil
     end
 
+    # Get an interior by name
+    #
+    # @param [String] name the name of the interior to find
+    # @return [Map::Interior, nil] the interior if found, nil if not
+    def interior_by_name(name)
+      interiors.select { |interior| interior.name == name }.first
+    end
+
     # Remove an entity at a specific coordinate
     #
     # @param [Integer] x the X coordinate
@@ -428,7 +455,7 @@ module BanditMayhem
         @matrix[y][x] = surface
       end
 
-      entities.any? ? true : false
+      entities.any?
     end
 
     # Remove a POI
@@ -455,6 +482,17 @@ module BanditMayhem
     # Map name
     def to_s
       name
+    end
+
+    # If this map is valid
+    def valid?
+      @errors
+    end
+
+    def ==(other)
+      return false unless other.is_a? Map
+
+      other.name == name && other.file == file
     end
 
     private
