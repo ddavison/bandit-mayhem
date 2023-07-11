@@ -92,6 +92,7 @@ interiors:
     height: 4
     pois:
       - type: door
+        locked: true
         x: 0
         y: 2
         destination:

@@ -8,8 +8,11 @@ module BanditMayhem
   # Bandit Mayhem Map
   class Map
     include Attributable
+    include Validatable
 
     MapError = Class.new(RuntimeError)
+
+    attr_reader :errors
 
     attribute :name
     attribute :width
@@ -72,9 +75,9 @@ module BanditMayhem
 
     BED                = 'π'.light_blue
 
-    SUN = '꥟'.yellow
+    SUN                = '꥟'.yellow
 
-    BEACON = 'Å'
+    BEACON             = 'Å'
 
     # Point of Interest
     class Poi
@@ -130,6 +133,7 @@ module BanditMayhem
       # Map Door
       class Door < Poi
         attribute :destination
+        attribute :locked, false
 
         # Is this door unlocked?
         #
@@ -142,19 +146,19 @@ module BanditMayhem
         #
         # @return [Boolean] true if locked
         def locked?
-          @locked
+          locked
         end
 
         def lock
-          @locked = true
+          self.locked = true
         end
 
         def unlock
-          @locked = false
+          self.locked = false
         end
 
         def rune
-          unlocked? ? DOOR : '¤'.light_red
+          unlocked? ? DOOR : DOOR.light_red
         end
 
         # Traverse through the door
@@ -376,23 +380,6 @@ module BanditMayhem
       puts render
     end
 
-    # exit a location
-    def exit_location
-      # first we should favor the @render's `exits` attribute.  otherwise, calculate the nearest free space
-      current_location = [Game.player.location[:x], Game.player.location[:y]]
-
-      pois.each do |point|
-        if [point['x'], point['y']] == current_location
-          if point['exits']
-            Game.player.location[:x] = point['exits']['x'] || Game.player.location[:x]
-            Game.player.location[:y] = point['exits']['y'] || Game.player.location[:y]
-          else
-            Game.player.location[:y] += 1
-          end
-        end
-      end
-    end
-
     # Get an entity at a specific coordinate
     #
     # @param [Integer] x the X coordinate
@@ -484,9 +471,14 @@ module BanditMayhem
       name
     end
 
-    # If this map is valid
+    # Is this map valid?
+    #
+    # @return [Boolean] true if the map is invalid
+    # @note Sets @errors if any exist
     def valid?
-      @errors
+      @errors = [] # clear errors
+
+
     end
 
     def ==(other)

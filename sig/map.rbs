@@ -1,0 +1,297 @@
+module BanditMayhem
+  # Bandit Mayhem Map
+  class Map
+    include Attributable
+    include Validatable
+
+    MapError: Class
+
+    attr_reader errors: Array[Hash[String,String]]
+    attr_accessor matrix: Array[Array[Integer]]
+
+    WALL_VERT: String
+    WALL_HORIZ: String
+    WALL_VERT_BORDER: String
+    WALL_HORIZ_BORDER: String
+    CORNER_UPPER_RIGHT: String
+    CORNER_UPPER_LEFT: String
+    CORNER_LOWER_LEFT: String
+    CORNER_LOWER_RIGHT: String
+    INTERIOR_WALL_VERT: String
+    INTERIOR_WALL_HORIZ: String
+    INTERIOR_CORNER_UPPER_RIGHT: String
+    INTERIOR_CORNER_UPPER_LEFT: String
+    INTERIOR_CORNER_LOWER_LEFT: String
+    INTERIOR_CORNER_LOWER_RIGHT: String
+    PATH: String
+    DOOR: String
+    CAVE: String
+    SURFACE_DEFAULT: String
+    SURFACE_STONE: String
+    SURFACE_GRASS: String
+    SURFACE_MARBLE: String
+    SHOP: String
+    PLAYER: String
+    COINPURSE: String
+    ITEM: String
+    BANDIT: String
+    OTHER: String
+    TREE: String
+    NPC: String
+    BED: String
+    SUN: String
+    BEACON: String
+
+    # Point of Interest
+    class Poi
+      include Attributable
+      include Interactable
+
+      # Instantiate a new Point of Interest (POI)
+      #
+      # @param [Hash] poi_hash well-formed hash, probably from a map YAML file
+      # @return [Poi]
+      def initialize: (Hash[String, untyped] poi_hash) -> void
+
+      # Rune to draw on the Map
+      def rune: () -> String
+
+      def to_s: () -> String
+
+      # Map Wall
+      class Wall < Poi
+        def rune: () -> String
+
+        # Is this wall vertical?
+        # @return [Boolean] true if vertical
+        def vertical?: () -> bool
+
+        # Is this wall horizontal?
+        # @return [Boolean] true if horizontal
+        def horizontal?: () -> bool
+      end
+
+      # Map Door
+      class Door < Poi
+        # Is this door unlocked?
+        #
+        # @return [Boolean] true if unlocked
+        def unlocked?: () -> bool
+
+        # Is this door locked?
+        #
+        # @return [Boolean] true if locked
+        def locked?: () -> bool
+
+        def lock: () -> void
+
+        def unlock: () -> void
+
+        def rune: () -> String
+
+        # Traverse through the door
+        # @param [Character] character
+        def interact_with: (Character character) -> void
+      end
+
+      # Map Coinpurse
+      class Coinpurse < Poi
+        include Consumable
+
+        # Add gold to the character's wallet
+        def interact_with: (untyped what) -> untyped
+      end
+
+      # Map Shop
+      class Shop < Poi
+      end
+
+      # Map Item
+      class Item < Poi
+        include Consumable
+
+        # Add item to inventory
+        def interact_with: (untyped what) -> untyped
+      end
+
+      # Map Tree
+      class Tree < Poi
+        # Player collides with tree
+        #
+        # @param [Player] player
+        def interact_with: (untyped player) -> (nil | untyped)
+      end
+
+      # Bed
+      #
+      # @note interacting with the bed will fill the characters health to max
+      class Bed < Poi
+        def interact_with: (untyped character) -> untyped
+      end
+    end
+
+    # Map Interior
+    class Interior
+      include Attributable
+
+      def initialize: (untyped interior_attrs) -> void
+
+      def to_s: () -> untyped
+    end
+
+    # Load a new map
+    #
+    # @return [Map]
+    # @overload new(name)
+    #   Load a map with a given name
+    # @overload new(name, **attrs)
+    #   @param [String] name the name of the map to load
+    #   @param [Hash] attrs all additional attributes to load into the map
+    #   @note use :file to load a specific map file
+    def initialize: (String name, **Hash[String | Symbol, any] attrs) -> void
+
+    # Generate the map
+    def generate: () -> void
+
+    # Check if this map has been generated yet.
+    #
+    # @note this checks if the matrix has elements within to detect generation
+    # @return [Boolean] true when generated
+    def generated?: () -> bool
+
+    def render: () -> String
+
+    # Get the map to the north
+    #
+    # @return [Map,nil]
+    def north_map: () -> (Map | nil)
+
+    # Get the map to the south
+    #
+    # @return [Map,nil]
+    def south_map: () -> (Map | nil)
+
+    # Get the map to the west
+    #
+    # @return [Map,nil]
+    def west_map: () -> (Map | nil)
+
+    # Get the map to the east
+    #
+    # @return [Map,nil]
+    def east_map: () -> (Map | nil)
+
+    # draw the @render
+    def draw_map: () -> void
+
+    # Get an entity at a specific coordinate
+    #
+    # @param [Integer] x the X coordinate
+    # @param [Integer] y the Y coordinate
+    # @return [Poi,Character::Npc,nil] the entity at a specific coordinate
+    def at: (x: untyped x, y: untyped y) -> (Poi | Character | Npc)
+
+    # Get an interior at an intersection of coords
+    #
+    # @param [Integer] x the X coordinate
+    # @param [Integer] y the Y coordinate
+    # @return [Map::Interior,nil] the interior if found. nil if not
+    def interior_at: (x: Integer x, y: Integer y) -> (Interior | nil)
+
+    # Get an interior by name
+    #
+    # @param [String] name the name of the interior to find
+    # @return [Map::Interior, nil] the interior if found, nil if not
+    def interior_by_name: (String name) -> (Interior | nil)
+
+    # Remove an entity at a specific coordinate
+    #
+    # @param [Integer] x the X coordinate
+    # @param [Integer] y the Y coordinate
+    # @return [Boolean] true if at least one entity was removed
+    def remove_at: (x: Integer x, y: Integer y) -> bool
+
+    # Remove a POI
+    #
+    # @param [Poi] poi the Point of interest to remove from the map
+    # @return [Boolean] true if this poi was removed
+    def remove: (untyped poi) -> (::FalseClass | untyped)
+
+    # Get a character from the map's matrix if exists
+    #
+    # @param [Integer] x the x coordinate
+    # @param [Integer] y the y coordinate
+    # @return [String,nil] the character rendered at the coordinate
+    def char_at: (x: Integer x, y: Integer y) -> String
+
+    # Map name
+    def to_s: () -> String
+
+    # Is this map valid?
+    #
+    # @return [Boolean] true if the map is invalid
+    # @note Sets @errors if any exist
+    def valid?: () -> bool
+
+    def ==: (untyped other) -> bool
+
+    private
+
+    # Load map data from a YAML file
+    #
+    # @overload load_attributes_from_map(name)
+    #   @param [String] name the name of the map file (without yaml suffix)
+    # @overload load_attributes_from_map(name, file)
+    #   @param [String] name the name of the map file (without yaml suffix)
+    #   @param [String] file the explicit map file to load
+    def load_attributes_from_map: (String name, ?untyped? file) -> (::Hash[untyped, untyped] | untyped)
+
+    # The save files contain a maps key which contains the name
+    #
+    # @param [String] name
+    def load_attributes_from_save: (String name) -> (::Hash[untyped, untyped] | untyped)
+
+    # Take map pois and convert in-place to their respective data structure
+    def load_pois: () -> void
+
+    # Take map interiors and convert in-place to their respective data structure
+    def load_interiors: () -> void
+
+    # Load NPCs into the map
+    def load_npcs: () -> void
+
+    # Draw the corners of the map
+    def draw_boundary_corners: () -> void
+
+    # Draw the walls of the map
+    def draw_boundary_walls: () -> void
+
+    # Draw the surface of the map
+    #
+    # @see .surface
+    def draw_surface: () -> void
+
+    # Draw paths on the map
+    def draw_paths: () -> void
+
+    # Draw interiors specified in the map file
+    def draw_interiors: () -> void
+
+    # Draw POIs on the map
+    def draw_pois: () -> void
+
+    # Draw non-playable characters on the map
+    def draw_npcs: () -> void
+
+    # Draw the player on the map
+    def draw_player: () -> void
+
+    # The surface of the map that the player walks on
+    #
+    # @return [String]
+    # @example
+    #   Map.new('town').surface #=> '.'
+    #   Map.new('field').surface #=> ','
+    def surface: () -> String
+  end
+end

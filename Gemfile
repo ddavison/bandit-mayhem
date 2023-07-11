@@ -11,5 +11,7 @@ group :development, :test do
 
   gem 'pry'
   gem 'symbolized'
+
+  gem 'rbs'
 end
 

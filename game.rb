@@ -53,10 +53,10 @@ module BanditMayhem
         save_name = args.first.to_s
         save_name = 'savegame' if save_name == ''
 
-        _loc = @game.player.location
+        location = @game.player.location
 
         save = {
-          location: {map: _loc[:map].attributes['name'], x: _loc[:x], y: _loc[:y] },
+          location: { map: location[:map].attributes['name'], x: location[:x], y: location[:y] },
           player: @game.player,
           maps: {}
         }

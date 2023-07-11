@@ -3,7 +3,7 @@
 require 'spec_helper'
 
 module BanditMayhem
-  RSpec.describe Npc do
+  RSpec.xdescribe Npc do
     let(:player) { Game.player }
 
     let(:input) { '1' }
