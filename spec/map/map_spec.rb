@@ -8,7 +8,7 @@ module BanditMayhem
       let(:player) { Character.new(name: 'test player') }
 
       subject(:map) do
-        Map.new('qasmoke', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml')))
+        build(:map, file: map_fixture('qasmoke.yml'))
       end
 
       before do
@@ -176,17 +176,6 @@ module BanditMayhem
         end
 
         context 'when attributes are specified' do
-          context 'when map exists' do
-            subject(:map) do
-              Map.new('qasmoke', height: 50, file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml')))
-            end
-
-            it 'merges the attributes' do
-              expect(map.width).to eq(50)
-              expect(map.height).to eq(50)
-            end
-          end
-
           context 'when map does not exist' do
             subject(:map) do
               Map.new('smoke', name: 'New Map', height: 1, width: 1)

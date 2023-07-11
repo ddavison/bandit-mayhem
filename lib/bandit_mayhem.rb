@@ -30,10 +30,7 @@ module BanditMayhem
 
     class << self
       attr_writer :map
-
-      def player
-        @player ||= Player.new(name: 'Nigel', health: 30, x: 1, y: 5, map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
-      end
+      attr_accessor :player
 
       def map
         @map ||= player.map
@@ -77,6 +74,7 @@ module BanditMayhem
     def initialize(player_name)
       # Load the game on game start
       Game.load_save if File.exist?(DEFAULT_SAVE)
+      Game.player = Player.new(name: player_name, health: 30, x: 1, y: 5, map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
 
       @quit = false
     end

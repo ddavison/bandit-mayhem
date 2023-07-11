@@ -31,10 +31,10 @@ module BanditMayhem
       # Drawn paths
       attribute :paths, []
 
-      attribute :north, optional: true
-      attribute :south, optional: true
-      attribute :east, optional: true
-      attribute :west, optional: true
+      attribute :north
+      attribute :south
+      attribute :east
+      attribute :west
 
       attr_accessor :matrix
 
@@ -113,7 +113,7 @@ module BanditMayhem
 
         merge_attributes load_attributes_from_map(name, file)
         merge_attributes load_attributes_from_save(name) unless skip_load
-        merge_attributes attrs
+        merge_attributes attrs unless file
 
         load_pois
         load_interiors
@@ -149,12 +149,9 @@ module BanditMayhem
         draw_paths
 
         draw_interiors
-
         draw_pois
-
         draw_npcs
-
-        draw_player if Game.player.x != -1 && Game.player.y != -1
+        draw_player if Game.player && Game.player.x != -1 && Game.player.y != -1
       end
 
       # Check if this map has been generated yet.

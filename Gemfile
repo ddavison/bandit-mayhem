@@ -8,6 +8,7 @@ group :development, :test do
   gem 'rspec'
   gem 'rspec-parameterized'
   gem 'rake'
+  gem 'factory_bot'
 
   gem 'pry'
   gem 'symbolized'

@@ -40,9 +40,6 @@ npcs:
   - name: Some Dude
     x: 5
     y: 1
-    dialog:
-      - What up?:
-          Not much, you?: Just testing.
 
 interiors:
   - name: Test Room
