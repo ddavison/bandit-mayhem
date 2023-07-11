@@ -13,9 +13,6 @@ module BanditMayhem
     end
 
     before do
-      allow(Game).to receive(:player).and_return(Player.new(name: 'unused')) # prevent player from being rendered.
-      allow(Game).to receive(:map).and_return(map)
-
       character.map = map
 
       map.generate

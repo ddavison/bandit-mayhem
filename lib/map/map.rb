@@ -12,8 +12,6 @@ module BanditMayhem
 
       MapError = Class.new(RuntimeError)
 
-      attr_reader :errors
-
       attribute :name
       attribute :width
       attribute :height
@@ -33,10 +31,10 @@ module BanditMayhem
       # Drawn paths
       attribute :paths, []
 
-      attribute :north
-      attribute :south
-      attribute :east
-      attribute :west
+      attribute :north, optional: true
+      attribute :south, optional: true
+      attribute :east, optional: true
+      attribute :west, optional: true
 
       attr_accessor :matrix
 
@@ -308,16 +306,6 @@ module BanditMayhem
         name
       end
 
-      # Is this map valid?
-      #
-      # @return [Boolean] true if the map is invalid
-      # @note Sets @errors if any exist
-      def valid?
-        @errors = [] # clear errors
-
-
-      end
-
       def ==(other)
         return false unless other.is_a? Map
 
@@ -361,11 +349,7 @@ module BanditMayhem
       # Take map pois and convert in-place to their respective data structure
       def load_pois
         pois.each_with_index do |poi, i|
-          pois[i] = if poi[:type]
-                      BanditMayhem::Map::Pois.const_get(poi[:type].underscore.classify).new(poi)
-                    else
-                      BanditMayhem::Map::Pois.new(poi)
-                    end
+          pois[i] = BanditMayhem::Map::Pois.const_get(poi[:type].underscore.classify).new(poi)
         end
       end
 

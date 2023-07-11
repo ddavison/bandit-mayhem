@@ -6,8 +6,8 @@ module BanditMayhem
       include Interactable
 
       attribute :name
-      attribute :x
-      attribute :y
+      attribute :x, required: true
+      attribute :y, required: true
       attribute :type
 
       # Instantiate a new Point of Interest (POI)
@@ -16,6 +16,8 @@ module BanditMayhem
       # @return [Poi]
       def initialize(poi_hash)
         merge_attributes poi_hash
+
+        raise AttributeError, [errors, poi_hash] unless valid?
       end
 
       # Rune to draw on the Map

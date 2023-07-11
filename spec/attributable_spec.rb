@@ -48,5 +48,59 @@ module BanditMayhem
         expect(attributed_class[:str]).to eq(10)
       end
     end
+
+    describe '#valid?' do
+      subject(:validated_class) do
+        Class.new do
+          include Attributable
+
+          attribute :attr, type: String
+        end.new
+      end
+
+      context 'when attribute has an invalid type' do
+        subject(:invalid_class) do
+          Class.new do
+            include Attributable
+
+            attribute :attr, 10, type: String
+          end.new
+        end
+
+        it 'is invalid' do
+          expect(invalid_class).not_to be_valid
+          expect(invalid_class.errors.first).to eq('attr is not a String')
+        end
+      end
+
+      context 'when an attribute is required but not passed' do
+        subject(:invalid_class) do
+          Class.new do
+            include Attributable
+
+            attribute :attr, required: true
+          end.new
+        end
+
+        it 'is invalid' do
+          expect(invalid_class).not_to be_valid
+          expect(invalid_class.errors.first).to eq('attr is required')
+        end
+      end
+
+      context 'when an attribute is optional' do
+        subject(:valid_class) do
+          Class.new do
+            include Attributable
+
+            attribute :attr
+          end.new
+        end
+
+        it 'is valid' do
+          expect(valid_class).to be_valid
+        end
+      end
+    end
   end
 end

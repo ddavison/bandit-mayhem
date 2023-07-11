@@ -8,10 +8,15 @@ module BanditMayhem
 
     def self.included(base)
       base.class_eval do
+        attr_reader :errors
+
         def self.inherited(clazz)
           attributes.each do |attr, value|
             clazz.class_eval { attribute attr, value }
           end
+
+          clazz.instance_variable_set(:@validations, validations)
+          # clazz.instance_variable_set(:@attributes, attributes)
 
           super
         end
@@ -20,8 +25,9 @@ module BanditMayhem
         #
         # @param [Symbol] name the name of the attribute
         # @param [Any] default_value the value defaulted
-        def self.attribute(name, default_value = nil)
+        def self.attribute(name, default_value = nil, **validations)
           @attributes ||= {}
+          @validations ||= {}
 
           attr_writer name
 
@@ -31,6 +37,7 @@ module BanditMayhem
           end
 
           @attributes[name] = default_value
+          @validations[name] = validations if validations.any?
         end
 
         def self.attributes
@@ -42,6 +49,17 @@ module BanditMayhem
         # @return [Hash]
         def attributes
           self.class.attributes
+        end
+
+        def self.validations
+          @validations
+        end
+
+        # All declared validations
+        #
+        # @return [Hash]
+        def validations
+          self.class.validations
         end
 
         # All current and calculated attributes
@@ -78,6 +96,31 @@ module BanditMayhem
         # Return an attribute by means of a symbol index
         def [](attr)
           public_send(attr)
+        end
+
+        def valid?
+          @errors = []
+
+          validations.each do |validation|
+            attr, checks = validation
+
+            checks.each do |check|
+              c, v = check
+              content = current_attributes[attr]
+
+              case c
+              when :required
+                @errors << "#{attr} is required" if v == true && content.nil?
+              when :type
+                # check the data type
+                @errors << "#{attr} is not a #{v}" unless content.is_a?(v)
+              else
+                raise AttributeError, "unknown validation #{c}"
+              end
+            end
+          end
+
+          @errors.none?
         end
       end
     end

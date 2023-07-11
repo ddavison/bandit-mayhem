@@ -1,0 +1,7 @@
+module BanditMayhem
+  class Character
+    private
+
+    def can_move?: (Symbol) -> bool
+  end
+end
