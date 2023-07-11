@@ -32,7 +32,7 @@ module BanditMayhem
       attr_writer :map
 
       def player
-        @player ||= Player.new(name: 'Nigel', health: 30, x: 1, y: 5, map: Map.new('lynwood/strick_household'))
+        @player ||= Player.new(name: 'Nigel', health: 30, x: 1, y: 5, map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
       end
 
       def map

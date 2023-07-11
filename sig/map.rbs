@@ -2,7 +2,6 @@ module BanditMayhem
   # Bandit Mayhem Map
   class Map
     include Attributable
-    include Validatable
 
     MapError: Class
 
@@ -52,6 +51,8 @@ module BanditMayhem
       # @param [Hash] poi_hash well-formed hash, probably from a map YAML file
       # @return [Poi]
       def initialize: (Hash[String, untyped] poi_hash) -> void
+
+      def interact_with: (any) -> void
 
       # Rune to draw on the Map
       def rune: () -> String

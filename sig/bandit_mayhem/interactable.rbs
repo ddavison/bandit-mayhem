@@ -1,0 +1,5 @@
+module BanditMayhem
+  module Interactable
+    def interact_with: (any) -> void
+  end
+end

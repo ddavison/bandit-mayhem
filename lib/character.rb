@@ -85,28 +85,28 @@ module BanditMayhem
 
     # Get the entity, in the map, to the north of the character. nil if none
     #
-    # @return [Map::Poi,Npc,nil]
+    # @return [Map::Pois,Npc,nil]
     def north
       map.at(x:, y: y - 1)
     end
 
     # Get the entity, in the map, to the south of the character. nil if none
     #
-    # @return [Map::Poi,Npc,nil]
+    # @return [Map::Pois,Npc,nil]
     def south
       map.at(x:, y: y + 1)
     end
 
     # Get the entity, in the map, to the west of the character. nil if none
     #
-    # @return [Map::Poi,Npc,nil]
+    # @return [Map::Pois,Npc,nil]
     def west
       map.at(x: x - 1, y:)
     end
 
     # Get the entity, in the map, to the east of the character. nil if none
     #
-    # @return [Map::Poi,Npc,nil]
+    # @return [Map::Pois,Npc,nil]
     def east
       map.at(x: x + 1, y:)
     end
@@ -230,10 +230,10 @@ module BanditMayhem
     # @param [Integer] x the X coordinate
     # @param [Integer] y the Y coordinate
     def warp(x: self.x, y: self.y, map: self.map)
-      self.map = if map.is_a?(Map)
+      self.map = if map.is_a?(Map::Map)
                    map
                  else
-                   Map.new(map)
+                   Map::Map.new(map)
                  end
 
       self.x = x
@@ -265,7 +265,7 @@ module BanditMayhem
     def move(direction)
       case direction
       when :up, :w
-        is_door = north.is_a?(Map::Poi::Door)
+        is_door = north.is_a?(Map::Pois::Door)
 
         if y == 1 && !is_door
           if map.north
@@ -281,7 +281,7 @@ module BanditMayhem
           self.y -= 1 unless is_door
         end
       when :down, :s
-        is_door = south.is_a?(Map::Poi::Door)
+        is_door = south.is_a?(Map::Pois::Door)
 
         if y == map.height && !is_door
           if map.south
@@ -297,7 +297,7 @@ module BanditMayhem
           self.y += 1 unless is_door
         end
       when :left, :a
-        is_door = west.is_a?(Map::Poi::Door)
+        is_door = west.is_a?(Map::Pois::Door)
 
         if x == 1 && !is_door
           if map.west
@@ -313,7 +313,7 @@ module BanditMayhem
           self.x -= 1 unless is_door
         end
       when :right, :d
-        is_door = east.is_a?(Map::Poi::Door)
+        is_door = east.is_a?(Map::Pois::Door)
 
         if x == map.width && !is_door
           if map.east
@@ -357,7 +357,7 @@ module BanditMayhem
                end
 
       # TODO: add inability to move when colliding with an interior wall
-      !entity.is_a?(Map::Poi::Wall)
+      !entity.is_a?(Map::Pois::Wall)
     end
 
     def calculate_attack_damage

@@ -45,7 +45,7 @@ module BanditMayhem
     end
 
     def interact_with(what)
-      context 'This bed looks comfy', await: false if what.is_a?(Map::Poi::Bed)
+      context 'This bed looks comfy', await: false if what.is_a?(Map::Pois::Bed)
 
       super(what)
     end

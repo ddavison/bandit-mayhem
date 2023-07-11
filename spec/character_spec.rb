@@ -9,7 +9,7 @@ module BanditMayhem
     end
 
     let(:map) do
-      Map.new('qasmoke', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml')))
+      Map::Map.new('qasmoke', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'qasmoke.yml')))
     end
 
     before do
@@ -84,7 +84,7 @@ module BanditMayhem
 
     describe 'movement' do
       let(:map) do
-        Map.new('empty map', width: 3, height: 3)
+        Map::Map.new('empty map', width: 3, height: 3)
       end
 
       before do
@@ -93,7 +93,7 @@ module BanditMayhem
 
       context 'when walls are in the way' do
         let(:map) do
-          Map.new('map with walls', width: 3, height: 3, pois: [
+          Map::Map.new('map with walls', width: 3, height: 3, pois: [
                     { type: 'wall', direction: 'horiz', x: 2, y: 1 }, # north
                     { type: 'wall', direction: 'horiz', x: 2, y: 3 }, # south
                     { type: 'wall', direction: 'vert', x: 1, y: 2 }, # west
@@ -162,7 +162,7 @@ module BanditMayhem
 
       describe 'when map has borders' do
         let(:map) do
-          Map.new('with borders', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'with_borders.yml')))
+          Map::Map.new('with borders', file: File.absolute_path(File.join('spec', 'fixtures', 'maps', 'with_borders.yml')))
         end
 
         before do
@@ -192,7 +192,7 @@ module BanditMayhem
 
       describe 'when at map boundary' do
         let(:map) do
-          Map.new('jail map', width: 1, height: 1)
+          Map::Map.new('jail map', width: 1, height: 1)
         end
 
         before do
@@ -228,7 +228,7 @@ module BanditMayhem
 
       describe 'when there is a door at the boundary' do
         let(:map) do
-          Map.new('all doors', width: 1, height: 1, pois: [
+          Map::Map.new('all doors', width: 1, height: 1, pois: [
                     { type: 'door', x: 1, y: 0, destination: { map: '../../spec/fixtures/maps/qasmoke', x: 9, y: 1 } }, # north
                     { type: 'door', x: 1, y: 2, destination: { map: '../../spec/fixtures/maps/qasmoke', x: 9, y: 2 } }, # south
                     { type: 'door', x: 0, y: 1, destination: { map: '../../spec/fixtures/maps/qasmoke', x: 9, y: 3 } }, # west
@@ -274,7 +274,7 @@ module BanditMayhem
 
     describe 'adjacency' do
       let(:map) do
-        Map.new('adjacency', width: 3, height: 3, pois: [
+        Map::Map.new('adjacency', width: 3, height: 3, pois: [
                   { type: 'door', x: 2, y: 1 }, # .north
                   { type: 'item', x: 3, y: 2 }, # .east
                   { type: 'shop', x: 1, y: 2 }  # .west
@@ -289,7 +289,7 @@ module BanditMayhem
 
       describe '#north' do
         it 'returns the door above the character' do
-          expect(character.north).to be_a(Map::Poi::Door)
+          expect(character.north).to be_a(Map::Pois::Door)
         end
       end
 
@@ -301,13 +301,13 @@ module BanditMayhem
 
       describe '#east' do
         it 'returns the item to the right of the character' do
-          expect(character.east).to be_a(Map::Poi::Item)
+          expect(character.east).to be_a(Map::Pois::Item)
         end
       end
 
       describe '#west' do
         it 'returns the shop to the left of the character' do
-          expect(character.west).to be_a(Map::Poi::Shop)
+          expect(character.west).to be_a(Map::Pois::Shop)
         end
       end
     end
@@ -318,7 +318,7 @@ module BanditMayhem
       end
 
       let(:map) do
-        Map.new('interactions', width: 3, height: 3, pois: [
+        Map::Map.new('interactions', width: 3, height: 3, pois: [
                   { type: 'door', x: 2, y: 1, destination: { x: 9, y: 9 } }, # .north
                   { type: 'item', name: 'baton', x: 3, y: 2 }, # .east
                   { type: 'shop', x: 1, y: 2 }  # .west
@@ -330,7 +330,7 @@ module BanditMayhem
       context 'when specifying directions' do
         it '#up accepts a block' do
           character.up do |entity|
-            expect(entity).to be_a(Map::Poi::Door)
+            expect(entity).to be_a(Map::Pois::Door)
           end
         end
 
@@ -342,13 +342,13 @@ module BanditMayhem
 
         it '#left accepts a block' do
           character.left do |entity|
-            expect(entity).to be_a(Map::Poi::Shop)
+            expect(entity).to be_a(Map::Pois::Shop)
           end
         end
 
         it '#right accepts a block' do
           character.right do |entity|
-            expect(entity).to be_a(Map::Poi::Item)
+            expect(entity).to be_a(Map::Pois::Item)
           end
         end
       end
@@ -378,7 +378,7 @@ module BanditMayhem
 
     describe '#warp' do
       let(:blank_map) do
-        Map.new('blank', name: 'blank', width: 1, height: 1)
+        Map::Map.new('blank', name: 'blank', width: 1, height: 1)
       end
 
       context 'when warping between maps' do

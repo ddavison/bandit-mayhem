@@ -1,0 +1,65 @@
+module BanditMayhem
+  module Map
+    class Map
+      def at: -> Interactable?
+
+      def char_at: (x: int, y: int)-> String?
+
+      def draw_map: -> void
+
+      def east_map: -> Map?
+
+      def generate: -> void
+
+      def generated?: -> bool
+
+      def interior_at: (x: int, y: int) -> Interior?
+
+      def interior_by_name: (string) -> Interior?
+
+      def north_map: -> Map?
+
+      def remove: (Poi) -> bool
+
+      def remove_at: (x: int, y: int)-> bool
+
+      def render: -> string
+
+      def south_map: -> Map?
+
+      def valid?: -> bool
+
+      def west_map: -> Map?
+
+      private
+
+      def draw_boundary_corners: -> void
+
+      def draw_boundary_walls: -> void
+
+      def draw_interiors: -> void
+
+      def draw_npcs: -> void
+
+      def draw_paths: -> void
+
+      def draw_player: -> void
+
+      def draw_pois: -> void
+
+      def draw_surface: -> void
+
+      def load_attributes_from_map: (string, string?) -> Hash[untyped, untyped]
+
+      def load_attributes_from_save: (string) -> Hash[untyped, untyped]
+
+      def load_interiors: -> void
+
+      def load_npcs: -> void
+
+      def load_pois: -> void
+
+      def surface: -> string
+    end
+  end
+end
