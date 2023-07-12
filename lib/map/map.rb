@@ -203,7 +203,7 @@ module BanditMayhem
 
       # draw the @render
       def draw_map
-        puts 'You are currently in ' + name.green
+        puts 'You are currently in ' + name.green + " (#{Game.player.x}, #{Game.player.y})"
 
         # build the map
         generate

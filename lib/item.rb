@@ -23,6 +23,7 @@ module BanditMayhem
       context "#{character.name} has found a #{name}" do
         character.items << self
       end
+      Game.player.await_interaction
     end
 
     def to_s

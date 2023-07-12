@@ -12,6 +12,7 @@ module BanditMayhem
     #
     # @note this does not save the game
     def quit
+      Game.engine.draw(Game.engine.markdown.parse('# Goodbye!'))
       Kernel.exit
     end
     alias q quit

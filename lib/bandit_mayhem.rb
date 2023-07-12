@@ -3,8 +3,9 @@
 Encoding.default_external = 'UTF-8'
 
 require 'zeitwerk'
-require 'core_ext/string/inflections'
-require 'symbolized'
+
+require 'active_support/core_ext/string/inflections'
+require 'active_support/core_ext/hash/indifferent_access'
 
 require 'yaml'
 
@@ -65,18 +66,38 @@ module BanditMayhem
 
         save_file_contents.to_symbolized_hash
       end
+
+      def engine
+        @engine ||= Engine.new
+      end
     end
 
     # Start a new game with a specific player name
     #
     # @param [String] player_name the name of the player
     # @return [Game]
-    def initialize(player_name)
-      # Load the game on game start
-      Game.load_save if File.exist?(DEFAULT_SAVE)
-      Game.player = Player.new(name: player_name, health: 30, x: 1, y: 5, map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
+    def initialize
+      Game.engine.draw(Game.engine.markdown.parse('# Bandit Mayhem'))
+      selection = Game.engine.prompt.select('Select an option', 'New game', 'Load game', 'Quit')
 
-      @quit = false
+      case selection
+      when 'New game'
+        save_name = Game.engine.prompt.ask('Enter save name:', default: 'bandit-mayhem')
+
+        Game.player = Player.new(name: 'Nigel', health: 30, x: 1, y: 5, map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
+
+        # intro
+        Cinematic.new('intro').play
+
+        @quit = false
+      when 'Load game'
+        Game.load_save if File.exist?(DEFAULT_SAVE)
+        # TODO fix
+        # Game.player = Player.new(name: 'Nigel', health: 30, x: 1, y: 5, map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
+        @quit = false
+      when 'Quit'
+        @quit = true
+      end
     end
 
     # Game start point
@@ -102,13 +123,17 @@ module BanditMayhem
 
     # Main game loop
     def update
-      cls
-
-      Game.map.draw_map
-
       trap('SIGINT') { puts 'Goodbye!'; exit }
 
-      Game.player.await_interaction(Game.player.ui)
+      cls
+      Game.map.draw_map
+
+      # GET INPUT
+      Game.engine.draw(Game.engine.markdown.parse(Game.player.ui))
+      Game.player.await_interaction(<<~PROMPT)
+        ⎧ #{'w'.green} (up), #{'a'.green} (left), #{'s'.green} (down), #{'d'.green} (right), #{'<tab>'.green} (inventory) ⎭
+        #{'☞ '.magenta}
+      PROMPT
     end
   end
 end

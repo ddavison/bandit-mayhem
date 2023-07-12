@@ -56,6 +56,11 @@ pois:
     x: 27
     y: 20
 
+  - type: item
+    name: lynwood/armory_key
+    x: 24
+    y: 5
+
 interiors:
   - name: Strick Household
     x: 2
