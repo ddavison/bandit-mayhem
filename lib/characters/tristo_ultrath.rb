@@ -34,6 +34,7 @@ module BanditMayhem
         say 'What the hell are you doing in my house! Get out!'
 
         context "#{name.cyan} shoves you out of the door" do
+          map
           player.down # send player back through the door
         end
       end

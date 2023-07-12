@@ -243,7 +243,7 @@ module BanditMayhem
     end
 
     def interact_with(what)
-      super
+      super(what)
 
       map.remove(what) if what.is_a?(Consumable)
     end

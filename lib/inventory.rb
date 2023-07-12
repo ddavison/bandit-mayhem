@@ -12,13 +12,14 @@ module BanditMayhem
     end
 
     # If the inventory includes an instance of a specific item
-    #
+    # @param [Class,String] item the item to find
     # @return [Boolean] true if an item of this type exists
     def has_a?(item)
-      return false unless item.is_a? Class
+      clazz = item
+      clazz = BanditMayhem::Items.const_get(item.classify) if item.is_a? String
 
       select do |inventory_item|
-        return true if inventory_item.instance_of?(item)
+        return true if inventory_item.instance_of?(clazz)
       end
 
       false

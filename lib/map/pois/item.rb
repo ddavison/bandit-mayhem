@@ -12,8 +12,6 @@ module BanditMayhem
 
       # Add item to inventory
       def interact_with(what)
-        require 'pry-byebug'
-        binding.pry
         item = Items.const_get(name.underscore.classify).new(current_attributes)
 
         context "#{what.name.bold} has found a #{item.name.bold}", await: false do

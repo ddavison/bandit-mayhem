@@ -203,13 +203,14 @@ module BanditMayhem
 
       # draw the @render
       def draw_map
-        puts 'You are currently in ' + name.green + " (#{Game.player.x}, #{Game.player.y})"
+        Game.engine.draw('You are currently in ' + name.green + " (#{Game.player.x}, #{Game.player.y})")
+        Game.engine.draw("(#{}, #{})") if interior_at(x: Game.player.x, y: Game.player.y)
 
         # build the map
         generate
 
         # render the map
-        puts render
+        Game.engine.draw("\n#{render}")
       end
 
       # Get an entity at a specific coordinate
@@ -373,7 +374,7 @@ module BanditMayhem
           next npcs[i] = npc if npc.is_a?(Npc)
 
           npcs[i] = begin
-                      Characters.const_get(npc[:name].underscore.classify).new(npc)
+                      Characters.const_get(npc[:name].classify).new(npc)
                     rescue NameError
                       warn "NPC doesn't exist. #{npc[:name]}"
                       Npc.new(npc)

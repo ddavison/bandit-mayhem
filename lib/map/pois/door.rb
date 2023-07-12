@@ -7,6 +7,7 @@ module BanditMayhem
 
       attribute :destination
       attribute :locked, false
+      attribute :key
 
       # Is this door unlocked?
       #
@@ -31,13 +32,18 @@ module BanditMayhem
       end
 
       def rune
-        unlocked? ? RUNE.magenta : RUNE.light_red
+        # require 'pry-byebug'
+        # binding.pry
+        return RUNE.green if unlocked?
+        return RUNE.yellow if Game.player.items.has_a?(key)
+
+        RUNE.light_red
       end
 
       # Traverse through the door
       # @param [Character] character
       def interact_with(character)
-        character.warp(**destination) if unlocked?
+        character.warp(**destination) if unlocked? || character.items.has_a?(key)
       end
     end
   end

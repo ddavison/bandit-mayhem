@@ -4,7 +4,7 @@ width: 5
 height: 5
 
 npcs:
-  - name: Gabbi Strick
+  - name: gabbi_strick
     x: 1
     y: 1
     dialogs:

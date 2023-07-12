@@ -98,6 +98,7 @@ interiors:
     pois:
       - type: door
         locked: true
+        key: lynwood/armory_key
         x: 0
         y: 2
         destination:

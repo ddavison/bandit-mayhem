@@ -7,7 +7,7 @@ module BanditMayhem
 
     def interact_with(what)
       if what.is_a? Player
-        puts avatar if defined?(avatar)
+        Game.engine.draw(avatar) if defined?(avatar)
       end
     end
 
