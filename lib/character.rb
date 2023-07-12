@@ -343,21 +343,31 @@ module BanditMayhem
     # @return [Boolean] true if can move in this direction
     def can_move?(direction)
       # if next move will not collide with a wall
-      entity = case direction
-               when :up
-                 north
-               when :down
-                 south
-               when :left
-                 west
-               when :right
-                 east
-               else
-                 raise MovementError, "Cannot move in the direction `#{direction}`"
-               end
+      next_x, next_y = case direction
+                       when :up
+                         [x, y - 1]
+                       when :down
+                         [x, y + 1]
+                       when :left
+                         [x - 1, y]
+                       when :right
+                         [x + 1, y]
+                       else
+                         raise MovementError, "Cannot move in the direction `#{direction}`"
+                       end
 
-      # TODO: add inability to move when colliding with an interior wall
-      !entity.is_a?(Map::Pois::Wall)
+      char = map.char_at(x: next_x, y: next_y)
+
+      !(
+        char == Map::Map::WALL_HORIZ ||
+          char == Map::Map::WALL_VERT ||
+          char == Map::Map::INTERIOR_WALL_HORIZ ||
+          char == Map::Map::INTERIOR_WALL_VERT ||
+          char == Map::Map::INTERIOR_CORNER_LOWER_LEFT ||
+          char == Map::Map::INTERIOR_CORNER_LOWER_RIGHT ||
+          char == Map::Map::INTERIOR_CORNER_UPPER_LEFT ||
+          char == Map::Map::INTERIOR_CORNER_UPPER_RIGHT
+      )
     end
 
     def calculate_attack_damage

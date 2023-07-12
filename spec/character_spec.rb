@@ -429,5 +429,9 @@ module BanditMayhem
         end
       end
     end
+
+    describe '#can_move?' do
+
+    end
   end
 end
