@@ -13,7 +13,7 @@
   },
   "homepage": "https://github.com/ddavison/bandit-mayhem",
   "dependencies": {
-    "electron": "^5.0.6",
+    "electron": "^9.1.0",
     "grunt": "^1.0.4",
     "grunt-cli": "*",
     "grunt-contrib-clean": "*",
