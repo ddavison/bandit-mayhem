@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'yaml'
-require 'colorize'
-require 'symbolized'
 
 module BanditMayhem
   module Map
@@ -335,7 +333,7 @@ module BanditMayhem
       #
       # @param [String] name
       def load_attributes_from_save(name)
-        save_game = Game.load_save
+        save_game = Game.load_save(Game.save_name)
 
         map = save_game[:maps][name] if save_game[:maps]
 

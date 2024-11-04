@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'symbolized'
+require 'active_support/core_ext/hash/keys'
 
 module BanditMayhem
   module Attributable

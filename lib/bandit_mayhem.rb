@@ -6,6 +6,7 @@ require 'zeitwerk'
 
 require 'active_support/core_ext/string/inflections'
 require 'active_support/core_ext/hash/indifferent_access'
+require 'colorize'
 
 require 'yaml'
 
@@ -31,7 +32,8 @@ module BanditMayhem
 
     class << self
       attr_writer :map
-      attr_accessor :player
+
+      attr_accessor :player, :save_name
 
       def map
         @map ||= player.map
@@ -42,10 +44,10 @@ module BanditMayhem
       # @note this loads the game first, if a save exists
       def save
         File.write(
-          DEFAULT_SAVE,
+          save_name,
           YAML.dump(
-            load_save.tap do |save|
-              save[:name] = 'default'
+            load_save(save_name).tap do |save|
+              save[:name] = save_name
 
               save[:player] = player
 
@@ -56,25 +58,39 @@ module BanditMayhem
       end
 
       # Load the game save
-      def load_save
-        return {} unless File.exist?(DEFAULT_SAVE)
+      # @return [Hash] the game save
+      def load_save(file)
+        return {} unless File.exist?(file)
 
-        save_file_contents = YAML.unsafe_load_file(DEFAULT_SAVE)
+        save_file_contents = YAML.unsafe_load_file(file)
         save_file_contents ||= {} # if game save file is empty
 
         raise GameSaveError, 'Invalid game save format.' unless save_file_contents.is_a?(Hash)
 
-        save_file_contents.to_symbolized_hash
+        save_file_contents.deep_symbolize_keys!
       end
 
       def engine
         @engine ||= Engine.new
       end
+
+      # Game Cinematics
+      # @example
+      #   Game.cinematics['intro'] #=> return the intro cinematic
+      #   Game.cinematics.cinematics #=> return the raw array of all cinematics loaded
+      #   Game.cinematics['intro'].played? #=> has the intro cinematic played?
+      def cinematics
+        # load all cinematic objects to be played
+        @cinematics ||= Struct.new(:cinematics) do
+          def [](name)
+            cinematics.find { |c| c.name == name }
+          end
+        end.new(Dir[File.join(Cinematic::PATH, '/*')].map { |cin| Cinematic.new(File.basename(cin)) })
+      end
     end
 
     # Start a new game with a specific player name
     #
-    # @param [String] player_name the name of the player
     # @return [Game]
     def initialize
       Game.engine.draw(Game.engine.markdown.parse('# Bandit Mayhem'))
@@ -82,20 +98,24 @@ module BanditMayhem
 
       case selection
       when 'New game'
-        save_name = Game.engine.prompt.ask('Enter save name:', default: 'bandit-mayhem')
-
-        Game.player = Player.new(name: 'Nigel', health: 30, x: 1, y: 5, map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
+        Game.save_name = ".#{Game.engine.prompt.ask('Enter save name:', default: 'bandit-mayhem')}.save"
+        Game.player = Player.new(name: 'Nigel', health: 30, x: 1, y: 5,
+                                 map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
+        Game.save
 
         # intro
-        Cinematic.new('intro').play
+        Game.cinematics['intro'].play
 
         @quit = false
       when 'Load game'
-        Game.load_save if File.exist?(DEFAULT_SAVE)
-        # TODO fix
-        # Game.player = Player.new(name: 'Nigel', health: 30, x: 1, y: 5, map: BanditMayhem::Map::Map.new('lynwood/strick_household'))
+        Game.save_name = Game.engine.prompt.select('Load which game', Dir['.*.save'].map { |f| File.basename(f) })
+        game = Game.load_save(Game.save_name)
+        Game.player = game[:player]
+
         @quit = false
       when 'Quit'
+        @quit = true
+      else
         @quit = true
       end
     end
@@ -123,17 +143,26 @@ module BanditMayhem
 
     # Main game loop
     def update
-      trap('SIGINT') { puts 'Goodbye!'; exit }
+      trap('SIGINT') do
+        Game.engine.draw('Goodbye!')
+        exit
+      end
 
       cls
-      Game.map.draw_map
 
-      # GET INPUT
-      Game.engine.draw(Game.engine.markdown.parse(Game.player.ui))
-      Game.player.await_interaction(<<~PROMPT)
-        ⎧ #{'w'.green} (up), #{'a'.green} (left), #{'s'.green} (down), #{'d'.green} (right), #{'<tab>'.green} (inventory) ⎭
-        #{'☞ '.magenta}
-      PROMPT
+      Game.engine.draw(
+        Game.engine.box.frame(width: 100, height: 30, border: :thick, title: { top_left: Game.map.name.green }) do
+          # map
+          Game.map.generate
+          Game.map.render +
+          Game.engine.markdown.parse(Game.player.ui) +
+          <<~PROMPT
+              ⎧ #{'w'.green} (up), #{'a'.green} (left), #{'s'.green} (down), #{'d'.green} (right), #{'<tab>'.green} (inventory) ⎭
+            #{'☞'.magenta}
+          PROMPT
+        end
+      )
+      Game.player.await_interaction
     end
   end
 end

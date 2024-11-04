@@ -23,9 +23,8 @@ module BanditMayhem
     end
 
     def draw(text)
-      @out.print(text)
+      @out.print(text + "\r")
+      @out.flush
     end
-
-
   end
 end

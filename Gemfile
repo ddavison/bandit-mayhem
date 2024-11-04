@@ -1,26 +1,27 @@
+# frozen_string_literal: true
+
 source 'https://rubygems.org'
 
-gem 'colorize'
-gem 'zeitwerk'
-gem 'tty-cursor'
-gem 'tty-box'
-gem 'tty-markdown'
-gem 'tty-screen'
-gem 'tty-reader'
-gem 'tty-prompt'
-gem 'tty-table'
 gem 'activesupport'
+gem 'colorize'
+gem 'tty-box'
+gem 'tty-cursor'
+gem 'tty-markdown'
+gem 'tty-prompt'
+gem 'tty-reader'
+gem 'tty-screen'
+gem 'tty-table'
+gem 'zeitwerk'
 
 group :development, :test do
-  gem 'rubocop'
+  gem 'factory_bot'
+  gem 'rake'
   gem 'rspec'
   gem 'rspec-parameterized'
-  gem 'rake'
-  gem 'factory_bot'
+  gem 'rubocop'
 
   gem 'pry'
   gem 'pry-byebug'
 
   gem 'rbs'
 end
-

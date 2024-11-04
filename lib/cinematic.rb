@@ -2,6 +2,8 @@
 
 module BanditMayhem
   class Cinematic
+    attr_reader :name
+
     PATH = File.absolute_path(File.join(Dir.pwd, 'lib', 'cinematics'))
 
     # New cinematic object
@@ -11,6 +13,7 @@ module BanditMayhem
       @name = name
       @page = 0
       @number_of_pages = Dir["#{@path}/*.md"].size
+      @played = false
     end
 
     # Load a specific page from lib/cinematics/*/*.md
@@ -19,6 +22,8 @@ module BanditMayhem
     end
 
     def play
+      return if played? # player has already seen cinematic
+
       while @page < @number_of_pages
         Game.engine.draw(
           Game.engine.box.frame(load_page, align: :center, title: { top_left: "#{@name.upcase} #{@page}" })
@@ -26,6 +31,12 @@ module BanditMayhem
         Game.player.await_interaction
         next_page
       end
+
+      @played = true
+    end
+
+    def played?
+      @played
     end
 
     def next_page

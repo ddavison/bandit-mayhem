@@ -39,9 +39,9 @@ module BanditMayhem
           # player has all the items necessary. Continue
 
           if player.health != player.max_health
-            say "You should rest in the bed (#{Map::BED}) before you go, you're still weak."
+            say "You should rest in the bed (#{Map::Pois::Bed::RUNE}) before you go, you're still weak."
 
-            player.down
+            player.back
           else
             say 'Good luck out there!'
 
@@ -49,7 +49,7 @@ module BanditMayhem
           end
         else
           say 'You shouldnt leave here without your items!'
-          player.down # move player back away from Gabbi
+          player.back # move player back away from Gabbi
         end
       end
     end

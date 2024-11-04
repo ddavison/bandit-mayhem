@@ -83,6 +83,11 @@ module BanditMayhem
       move(:right) if can_move?(:right)
     end
 
+    # Warp the character back to where they were before the move.
+    def back
+      warp(**@previous_location)
+    end
+
     # Get the entity, in the map, to the north of the character. nil if none
     #
     # @return [Map::Pois,Npc,nil]
@@ -263,6 +268,8 @@ module BanditMayhem
     # @option direction [Symbol] :left
     # @option direction [Symbol] :right
     def move(direction)
+      @previous_location = { x: x, y: y }
+
       case direction
       when :up, :w
         is_door = north.is_a?(Map::Pois::Door)

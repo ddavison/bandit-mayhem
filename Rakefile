@@ -26,7 +26,7 @@ namespace :maps do
 
   desc 'Generate a map'
   task :generate, [:name, :x, :y] do |_, args|
-    map = BanditMayhem::Map.new(args[:name], width: args[:x].to_i, height: args[:y].to_i)
+    map = BanditMayhem::Map::Map.new(args[:name], width: args[:x].to_i, height: args[:y].to_i)
     map.generate
     puts map.render
   end
@@ -36,8 +36,8 @@ namespace :maps do
     map_file = File.expand_path(File.join('.', 'lib', 'maps', "#{args[:name]}.yml"))
 
     raise ArgumentError, "Map `#{args[:name]}` does not exist" unless File.exist?(map_file)
-
-    map = BanditMayhem::Map.new(args[:name], skip_load: true) # don't load from save file
+    BanditMayhem::Game.player = BanditMayhem::Player.new(name: 'test')
+    map = BanditMayhem::Map::Map.new(args[:name], skip_load: true) # don't load from save file
     map.generate
 
     puts map.render

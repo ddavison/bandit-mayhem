@@ -62,17 +62,16 @@ module BanditMayhem
     end
 
     def ui
-      <<~MARKDOWN
-        ## Health: #{health.to_s.red}/#{max_health.to_s.red}
-
-        ## Wallet: $#{gold.to_s.yellow}
-      MARKDOWN
+      Game.engine.table.new([
+        ['Health', "#{health.to_s.red}/#{max_health.to_s.red}"],
+        ['Wallet', "$#{gold.to_s.yellow}"]
+      ]).render(:unicode)
     end
 
     def initialize(attrs)
       super(attrs)
 
-      save_game = Game.load_save
+      save_game = Game.load_save(Game.save_name)
 
       return unless save_game[:player]
 
